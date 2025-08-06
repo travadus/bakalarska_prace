@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 public class GridBuildingSystem : MonoBehaviour
 {
@@ -57,7 +58,11 @@ public class GridBuildingSystem : MonoBehaviour
             grid.GetXZ(Mouse3D.GetMouseWorldPosition(), out int x, out int z);
 
             GridObject gridObject = grid.GetGridObject(x, z);
-            if(gridObject.CanBuild())
+
+            if (EventSystem.current.IsPointerOverGameObject())
+                return;
+
+            if (gridObject.CanBuild())
             {
                 Transform buildTransform = Instantiate(testTransform, grid.GetWorldPosition(x, z), Quaternion.identity);
                 gridObject.SetTransform(buildTransform);
