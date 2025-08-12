@@ -2,13 +2,13 @@ using UnityEngine;
 
 public class ToggleCanvas : MonoBehaviour
 {
-    public GameObject canvasToToggle;
+    public GameObject objectToToggle;
     private bool isVisible = false;
 
     void Start()
     {
-        if (canvasToToggle != null)
-            canvasToToggle.SetActive(false);
+        if (objectToToggle != null)
+            objectToToggle.SetActive(false);
     }
 
     void Update()
@@ -17,8 +17,8 @@ public class ToggleCanvas : MonoBehaviour
         {
             isVisible = !isVisible;
 
-            if (canvasToToggle != null)
-                canvasToToggle.SetActive(isVisible);
+            if (objectToToggle != null)
+                objectToToggle.SetActive(isVisible);
         }
     }
 }

@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "BuildingTypeSO", menuName = "ScriptableObjects/BuildingTypeSO")]
-public class PlacedObjectTypeSO
+public class PlacedObjectTypeSO : ScriptableObject
 {
     public string nameString;
     public Transform prefab;

@@ -4,7 +4,7 @@ using UnityEngine.EventSystems;
 public class GridBuildingSystem : MonoBehaviour
 {
 
-    [SerializeField] private Transform testTransform;
+    [SerializeField] private PlacedObjectTypeSO placedObjectTypeSO;
     private GridXZ<GridObject> grid;
 
     private void Awake()
@@ -57,6 +57,15 @@ public class GridBuildingSystem : MonoBehaviour
         {
             grid.GetXZ(Mouse3D.GetMouseWorldPosition(), out int x, out int z);
 
+            Vector3 wp = Mouse3D.GetMouseWorldPosition();
+            if (wp == Vector3.zero) { Debug.Log("Cannot build here!"); return; }
+
+            if (x < 0 || z < 0 || x >= grid.GetWidth() || z >= grid.GetHeight())
+            {
+                Debug.Log("Cannot build here!");
+                return;
+            }
+
             GridObject gridObject = grid.GetGridObject(x, z);
 
             if (EventSystem.current.IsPointerOverGameObject())
@@ -64,7 +73,7 @@ public class GridBuildingSystem : MonoBehaviour
 
             if (gridObject.CanBuild())
             {
-                Transform buildTransform = Instantiate(testTransform, grid.GetWorldPosition(x, z), Quaternion.identity);
+                Transform buildTransform = Instantiate(placedObjectTypeSO.prefab, grid.GetWorldPosition(x, z), Quaternion.identity);
                 gridObject.SetTransform(buildTransform);
             }
             else
