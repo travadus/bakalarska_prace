@@ -26,15 +26,15 @@ public class CodeTester : MonoBehaviour
             string playerCode = codeInput.text ?? string.Empty;
 
             string fullCode =
-@"using System;
-using UnityEngine;
-using static GameAPI;
+                @"using System;
+                using UnityEngine;
+                using static GameAPI;
 
-public class PlayerScript {
-#line 1 ""PlayerCode""
-" + playerCode + @"
-#line default
-}";
+                public class PlayerScript {
+                #line 1 ""PlayerCode""
+                " + playerCode + @"
+                #line default
+                }";
 
             SyntaxTree syntaxTree = CSharpSyntaxTree.ParseText(fullCode);
 
