@@ -1,18 +1,27 @@
+using System;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
 public class GridBuildingSystem : MonoBehaviour
 {
+    public static GridBuildingSystem Instance { get; private set; }
 
     [SerializeField] private PlacedObjectTypeSO placedObjectTypeSO;
     private GridXZ<GridObject> grid;
 
+    public event EventHandler OnSelectedChanged;
+    public event EventHandler OnObjectPlaced;
+
     private void Awake()
     {
+        Instance = this;
+
         int gridWidth = 10;
         int gridHeight = 10;
         float cellSize = 10f;
         grid = new GridXZ<GridObject>(gridWidth, gridHeight, cellSize, new Vector3(-50, 0, -50), (GridXZ<GridObject> g, int x, int z) => new GridObject(g, x, z));
+
+        //placedObjectTypeSO = null;
     }
 
     public class GridObject
@@ -83,6 +92,26 @@ public class GridBuildingSystem : MonoBehaviour
             }
             
         }
+    }
+
+    public Vector3 GetMouseWorldSnappedPosition()
+    {
+        Vector3 mousePosition = Mouse3D.GetMouseWorldPosition();
+        grid.GetXZ(mousePosition, out int x, out int z);
+
+        if (placedObjectTypeSO != null)
+        {
+            return grid.GetWorldPosition(x, z);
+        }
+        else
+        {
+            return mousePosition;
+        }
+    }
+
+    public PlacedObjectTypeSO GetPlacedObjectTypeSO()
+    {
+        return placedObjectTypeSO;
     }
 
 }
