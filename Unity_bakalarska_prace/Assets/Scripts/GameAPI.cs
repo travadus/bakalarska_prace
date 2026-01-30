@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 public static class GameAPI
@@ -5,14 +6,23 @@ public static class GameAPI
     public static MarketManager MarketSystem;
     public static EconomyManager EconomySystem => EconomyManager.Instance;
 
+    // Událost, kterou bude poslouchat PlayerScriptEngine
+    public static event Action<string> OnLogMessage;
+
     public static void Trade()
     {
         Debug.Log("Provedena akce Obchod");
     }
 
-    public static void Log(string message)
+    // Tuto metodu bude hráè volat ve svém kódu: Log("Ahoj");
+    public static void Log(object message)
     {
-        Debug.Log("Log: " + message);
+        // Pošleme zprávu do systému (pokud nìkdo poslouchá)
+        string msg = message != null ? message.ToString() : "null";
+        OnLogMessage?.Invoke(msg);
+
+        // Pro jistotu to vypíšeme i do Unity konzole (pro tebe jako vývojáøe)
+        Debug.Log($"[PLAYER]: {msg}");
     }
 
     public static void BuyEnergy(float amount)
