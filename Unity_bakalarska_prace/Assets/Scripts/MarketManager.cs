@@ -60,11 +60,18 @@ public class MarketManager : MonoBehaviour, ITickable
             {
                 currentData = allMarketData[i];
                 lastSearchIndex = i;
+
+                // --- TOTO ZDE CHYBÌLO: Pošleme cenu do EconomyManageru ---
+                if (EconomyManager.Instance != null)
+                {
+                    EconomyManager.Instance.currentElectricityPricePerMWh = currentData.price;
+                }
+                // ---------------------------------------------------------
+
                 return;
             }
 
-            // Pokud jsme v datech "pøedbìhli" herní èas, zastavíme se 
-            // a necháme platit poslední nalezenou cenu.
+            // Pokud jsme v datech "pøedbìhli" herní èas...
             if (allMarketData[i].time > gameTime)
             {
                 break;
