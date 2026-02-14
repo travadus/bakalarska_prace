@@ -8,6 +8,8 @@ public class BuildingsManager : MonoBehaviour
     // Slovník pro baterie (aby je GameAPI našlo)
     public Dictionary<int, BatteryBuilding> allBatteries = new Dictionary<int, BatteryBuilding>();
 
+    public Dictionary<int, SolarBuilding> allSolars = new Dictionary<int, SolarBuilding>();
+
     // V budoucnu sem pøidáš tøeba:
     // public Dictionary<int, SolarBuilding> allSolars = ...
 

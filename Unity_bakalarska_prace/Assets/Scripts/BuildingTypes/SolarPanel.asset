@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: SolarPanel
   m_EditorClassIdentifier: 
   nameString: SolarPanel
-  prefab: {fileID: 0}
-  visual: {fileID: 5304285966403990906, guid: 4fb7947ac59ea4246b34c390c1cf2fbd, type: 3}
+  prefab: {fileID: 1148846885615527582, guid: b3820358a44a09e40bbf300a1e082488, type: 3}
+  visual: {fileID: 532015493586110460, guid: dee08e661272ab14e8f96a8b6391135b, type: 3}
   width: 1
   length: 1

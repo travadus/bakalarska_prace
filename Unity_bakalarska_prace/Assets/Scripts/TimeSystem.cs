@@ -20,6 +20,7 @@ public class TimeSystem : MonoBehaviour
 
     // Skuteèný C# objekt pro datum a èas
     public DateTime CurrentDateTime { get; private set; }
+    public int TotalGameHours { get; private set; } = 0;
 
     [Header("Rychlost hry")]
     private float timeMultiplier = 1f; // 1f = normální rychlost
@@ -94,10 +95,15 @@ public class TimeSystem : MonoBehaviour
 
     private void ProcessTick()
     {
-        // Pøidáme minuty do DateTime objektu
+        int oldHour = CurrentDateTime.Hour;
+
         CurrentDateTime = CurrentDateTime.AddMinutes(GAME_MINUTES_PER_TICK);
 
-        // Oznámíme všem systémùm (vèetnì MarketDataSystem), že je nový èas
+        if (CurrentDateTime.Hour != oldHour)
+        {
+            TotalGameHours++;
+        }
+
         OnTick?.Invoke(CurrentDateTime);
 
         for (int i = tickableObjects.Count - 1; i >= 0; i--)

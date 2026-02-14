@@ -25,9 +25,13 @@ public static class GameAPI
     // =================================================================================
     #region Market & Economy
 
+    // =================================================================================
+    // SEKCE: TRH A PENÍZE (Market & Economy)
+    // =================================================================================
+
     /// <summary>
-    /// Nakoupí energii z globální sítì (Burzy) a pošle ji do lokální sbìrnice (Power Bus).
-    /// Energie bude dostupná až v pøíštím herním tiku.
+    /// Nakoupí energii z globální sítì.
+    /// OPRAVA: Už nepíše "IMPORTED", ale jen "BUY ORDER", protože energie dorazí až pøi Tiku.
     /// </summary>
     public static void BuyEnergy(float amount)
     {
@@ -39,49 +43,53 @@ public static class GameAPI
             {
                 if (EconomyManager.Instance == null || EnergySystem.Instance == null)
                 {
-                    ReportError("System Error: Managers missing!");
+                    if (PlayerScriptEngine.Instance != null)
+                        PlayerScriptEngine.Instance.LogMessage("RUNTIME ERROR: Managers missing!", Color.red);
                     return;
                 }
 
                 float price = EconomyManager.Instance.GetCurrentElectricityPrice();
-                float totalCost = amount * price; // Mùže být záporné!
+                float totalCost = amount * price;
+
+                bool success = false;
 
                 // SCÉNÁØ A: Cena je kladná (Musíme platit)
                 if (totalCost > 0)
                 {
-                    if (EconomyManager.Instance.TrySpendMoney(totalCost, $"Import: {amount} MWh"))
+                    if (EconomyManager.Instance.TrySpendMoney(totalCost, $"Order: {amount} MWh"))
                     {
-                        ProcessImport(amount);
+                        success = true;
                     }
                     else
                     {
                         PlayerScriptEngine.Instance.LogMessage("ERROR: Not enough money to buy energy!", Color.red);
                     }
                 }
-                // SCÉNÁØ B: Cena je záporná nebo nula (Dostaneme zaplaceno!)
+                // SCÉNÁØ B: Cena je záporná (Dostaneme zaplaceno)
                 else
                 {
-                    // Pøièteme peníze (Math.Abs udìlá z -3 èíslo 3)
                     float gain = Mathf.Abs(totalCost);
-                    EconomyManager.Instance.AddMoney(gain, $"Paid Import: {amount} MWh");
+                    EconomyManager.Instance.AddMoney(gain, $"Order Bonus: {amount} MWh");
+                    PlayerScriptEngine.Instance.LogMessage($"PAID TO CONSUME: Received {gain:F2} € bonus.", Color.cyan);
+                    success = true;
+                }
 
-                    ProcessImport(amount);
-                    PlayerScriptEngine.Instance.LogMessage($"PAID TO CONSUME: Received {gain:F2} € for importing {amount} MWh!", Color.cyan);
+                if (success)
+                {
+                    // 1. Zapíšeme do systému (dorazí pøíští Tik)
+                    EnergySystem.Instance.PlannedImport += amount;
+
+                    // 2. Hláška: JEN OBJEDNÁVKA (Žlutì)
+                    // Hráè ví, že to je na cestì. Až to dorazí, EnergySystem napíše zelenì "GRID INPUT".
+                    PlayerScriptEngine.Instance.LogMessage($"BUY ORDER: Waiting for {amount} MWh import...", Color.yellow);
                 }
             });
         }
     }
 
-    // Pomocná metoda
-    private static void ProcessImport(float amount)
-    {
-        EnergySystem.Instance.PlannedImport += amount;
-        PlayerScriptEngine.Instance.LogMessage($"IMPORTED {amount} MWh to Power Bus", Color.green);
-    }
-
     /// <summary>
-    /// Okamžitì prodá energii (zatím spekulativní prodej).
-    /// V budoucnu by to mìlo brát energii z pøebytkù sítì.
+    /// Zadá pøíkaz k prodeji energie.
+    /// Samotný prodej probìhne až v EnergySystem.
     /// </summary>
     public static void SellEnergy(float amount)
     {
@@ -91,30 +99,16 @@ public static class GameAPI
         {
             PlayerScriptEngine.Instance.EnqueueAction(() =>
             {
-                if (EconomyManager.Instance == null) return;
-                
-                float price = EconomyManager.Instance.GetCurrentElectricityPrice();
-                float totalRevenue = amount * price;
+                if (EnergySystem.Instance == null)
+                {
+                    if (PlayerScriptEngine.Instance != null)
+                        PlayerScriptEngine.Instance.LogMessage("RUNTIME ERROR: EnergySystem not found!", Color.red);
+                    return;
+                }
 
-                // SCÉNÁØ A: Cena je kladná (Vydìláváme)
-                if (totalRevenue > 0)
-                {
-                    EconomyManager.Instance.AddMoney(totalRevenue, $"Market Sell: {amount} MWh");
-                    PlayerScriptEngine.Instance.LogMessage($"SOLD {amount} MWh for {totalRevenue:F2} €", Color.green);
-                }
-                // SCÉNÁØ B: Cena je záporná (Musíme platit za likvidaci!)
-                else
-                {
-                    float penalty = Mathf.Abs(totalRevenue);
-                    if (EconomyManager.Instance.TrySpendMoney(penalty, $"Market Dump: {amount} MWh"))
-                    {
-                        PlayerScriptEngine.Instance.LogMessage($"WARNING: Paid {penalty:F2} € to dump {amount} MWh (Negative Price)!", Color.yellow);
-                    }
-                    else
-                    {
-                        PlayerScriptEngine.Instance.LogMessage("ERROR: Not enough money to dump energy at negative price!", Color.red);
-                    }
-                }
+                // Jen zapíšeme požadavek na export
+                EnergySystem.Instance.PlannedExport += amount;
+
             });
         }
     }
@@ -142,6 +136,91 @@ public static class GameAPI
     {
         if (EconomySystem != null) return EconomySystem.GetBalance() >= amount;
         return false;
+    }
+
+    #endregion
+
+    // =================================================================================
+    // SECTION: CONTRACTS
+    // =================================================================================
+    #region Contracts
+
+    /// <summary>
+    /// Returns the remaining MWh required for the current cycle of the given contract.
+    /// Returns 0 if contract is not active or not found.
+    /// </summary>
+    public static float GetContractRemainingQuota(int contractId)
+    {
+        if (ContractsManager.Instance == null) return 0f;
+
+        Contract c = ContractsManager.Instance.allContracts.Find(x => x.id == contractId);
+        if (c != null && c.status == ContractStatus.Active)
+        {
+            return c.GetRemainingInCycle();
+        }
+        return 0f;
+    }
+
+    /// <summary>
+    /// Delivers energy from the grid bus to an active contract.
+    /// </summary>
+    public static void DeliverToContract(int contractId, float amount)
+    {
+        if (amount <= 0 || ContractsManager.Instance == null || EnergySystem.Instance == null || PlayerScriptEngine.Instance == null) return;
+
+        PlayerScriptEngine.Instance.EnqueueAction(() =>
+        {
+            Contract c = ContractsManager.Instance.allContracts.Find(x => x.id == contractId);
+
+            if (c == null)
+            {
+                PlayerScriptEngine.Instance.LogMessage($"ERROR: Contract {contractId} not found.", Color.red);
+                return;
+            }
+
+            if (c.status != ContractStatus.Active)
+            {
+                PlayerScriptEngine.Instance.LogMessage($"ERROR: Contract {contractId} is not Active!", Color.red);
+                return;
+            }
+
+            float availableEnergy = EnergySystem.Instance.PowerBusLevel;
+
+            // SECURITY: Get exactly how much is missing for this cycle
+            float energyNeeded = c.GetRemainingInCycle();
+            float energyToDeliver = Mathf.Min(amount, energyNeeded);
+
+            if (energyToDeliver <= 0)
+            {
+                PlayerScriptEngine.Instance.LogMessage($"Contract {contractId} quota is already full for this cycle.", Color.yellow);
+                return;
+            }
+
+            if (availableEnergy >= energyToDeliver)
+            {
+                // Take energy from Grid
+                EnergySystem.Instance.ConsumeEnergyFromBus(energyToDeliver);
+                c.deliveredInCurrentCycle += energyToDeliver;
+
+                // PAY THE PLAYER: In the new system, they get paid per MWh delivered
+                float earnedMoney = energyToDeliver * c.rewardPerMWh;
+                if (EconomyManager.Instance != null)
+                {
+                    EconomyManager.Instance.AddMoney(earnedMoney, $"Delivery to {c.contractType}");
+                }
+
+                PlayerScriptEngine.Instance.LogMessage($"DELIVERED: {energyToDeliver:F1} MWh to {c.contractType}. Earned: {earnedMoney:F1} €", Color.green);
+
+                if (ContractsUI.Instance != null && ContractsUI.Instance.IsWindowOpen())
+                {
+                    ContractsUI.Instance.RefreshUI();
+                }
+            }
+            else
+            {
+                PlayerScriptEngine.Instance.LogMessage($"DELIVERY FAILED: Not enough energy in Grid Bus. (Requested {energyToDeliver:F1}, Available {availableEnergy:F1})", Color.red);
+            }
+        });
     }
 
     #endregion
@@ -240,6 +319,94 @@ public static class GameAPI
         {
             bat.currentMode = BatteryMode.Standby;
         }
+    }
+
+    #endregion
+
+    // =================================================================================
+    // SEKCE: SOLÁRNÍ PANELY (Solar Management)
+    // =================================================================================
+    #region Solar Management
+
+    public static int GetSolarCount()
+    {
+        if (BuildingsManager.Instance != null)
+            return BuildingsManager.Instance.allSolars.Count;
+        return 0;
+    }
+
+    public static int[] GetSolarIDs()
+    {
+        if (BuildingsManager.Instance != null)
+        {
+            int[] keys = new int[BuildingsManager.Instance.allSolars.Count];
+            BuildingsManager.Instance.allSolars.Keys.CopyTo(keys, 0);
+            return keys;
+        }
+        return new int[0];
+    }
+
+    /// <summary>
+    /// Vrátí aktuální výrobu panelu v MWh (už po odeètení špíny a mrakù).
+    /// </summary>
+    public static float GetSolarOutput(int id)
+    {
+        if (TryGetSolar(id, out var solar))
+        {
+            return solar.CurrentProduction;
+        }
+        return 0f;
+    }
+
+    /// <summary>
+    /// Vrátí zneèištìní panelu (0.00 až 1.00). 
+    /// 0.00 = Èistý, 1.00 = Špinavý (nevyrobí nic).
+    /// </summary>
+    public static float GetSolarDirtLevel(int id)
+    {
+        if (TryGetSolar(id, out var solar))
+        {
+            return solar.dirtLevel;
+        }
+        return 0f;
+    }
+
+    /// <summary>
+    /// Zaplatí úklidové èety, aby panel vyèistily.
+    /// </summary>
+    public static void CleanSolarPanel(int id)
+    {
+        if (PlayerScriptEngine.Instance != null)
+        {
+            PlayerScriptEngine.Instance.EnqueueAction(() =>
+            {
+                if (TryGetSolar(id, out var solar))
+                {
+                    float cost = solar.cleaningCost;
+
+                    if (EconomyManager.Instance.TrySpendMoney(cost, $"Cleaning Solar {id}"))
+                    {
+                        solar.CleanPanels();
+                        PlayerScriptEngine.Instance.LogMessage($"MAINTENANCE: Solar {id} cleaned for {cost} €.", Color.cyan);
+                    }
+                    else
+                    {
+                        PlayerScriptEngine.Instance.LogMessage("ERROR: Not enough money to clean solar panel!", Color.red);
+                    }
+                }
+            });
+        }
+    }
+
+    // --- Helper pro Soláry ---
+    private static bool TryGetSolar(int id, out SolarBuilding solar)
+    {
+        solar = null;
+        if (BuildingsManager.Instance == null) return false;
+        if (BuildingsManager.Instance.allSolars.TryGetValue(id, out solar)) return true;
+
+        ReportError($"Solar with ID {id} does not exist!");
+        return false;
     }
 
     #endregion

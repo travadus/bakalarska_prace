@@ -16,6 +16,9 @@ public class BatteryBuilding : BuildingBase, IGridActor
     {
         // DÙLEŽITÉ: Nastavíme jméno, které použije Manager pøi výpisu
         BuildingName = "Battery";
+
+        currentCharge = 0f;
+        currentMode = BatteryMode.Standby;
     }
 
     // public void Setup(int newID) <-- SMAZÁNO (Už je v BuildingBase)
