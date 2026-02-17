@@ -10,7 +10,8 @@ GameObject:
   m_Component:
   - component: {fileID: 6386311639425995853}
   - component: {fileID: 2960175460854890411}
-  m_Layer: 0
+  - component: {fileID: 8942054917397154869}
+  m_Layer: 10
   m_Name: BatteryPrefab
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -45,11 +46,32 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0348b61532e06f3469b8f25e54170cb9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BatteryBuilding
+  BuildingName: 
   maxStorageCapacity: 100
   maxInputOutput: 10
-  id: 0
   currentCharge: 0
-  isOnline: 1
+  currentMode: 0
+--- !u!65 &8942054917397154869
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5598232516933743261}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 10, y: 2, z: 10}
+  m_Center: {x: 5, y: 0.5, z: 5}
 --- !u!1001 &6791791535937273765
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -99,18 +121,49 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 903035314708071104, guid: 3b0094f9313c1074a9b46a6c482095b9, type: 3}
+      propertyPath: m_Layer
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 903035314708071104, guid: 3b0094f9313c1074a9b46a6c482095b9, type: 3}
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1215891163839320158, guid: 3b0094f9313c1074a9b46a6c482095b9, type: 3}
+      propertyPath: m_Layer
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 1215891163839320158, guid: 3b0094f9313c1074a9b46a6c482095b9, type: 3}
       propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1567488249226413434, guid: 3b0094f9313c1074a9b46a6c482095b9, type: 3}
+      propertyPath: m_Layer
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 1935143091396420886, guid: 3b0094f9313c1074a9b46a6c482095b9, type: 3}
+      propertyPath: m_Layer
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 4478502979797025617, guid: 3b0094f9313c1074a9b46a6c482095b9, type: 3}
+      propertyPath: m_IsTrigger
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5706529078574514340, guid: 3b0094f9313c1074a9b46a6c482095b9, type: 3}
       propertyPath: m_Name
       value: BatteryBuildingVisual
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    - target: {fileID: 5706529078574514340, guid: 3b0094f9313c1074a9b46a6c482095b9, type: 3}
+      propertyPath: m_Layer
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 7281615203546566125, guid: 3b0094f9313c1074a9b46a6c482095b9, type: 3}
+      propertyPath: m_Layer
+      value: 10
+      objectReference: {fileID: 0}
+    m_RemovedComponents:
+    - {fileID: 4478502979797025617, guid: 3b0094f9313c1074a9b46a6c482095b9, type: 3}
+    - {fileID: 6799045274647851482, guid: 3b0094f9313c1074a9b46a6c482095b9, type: 3}
+    - {fileID: 2464385327846709425, guid: 3b0094f9313c1074a9b46a6c482095b9, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []

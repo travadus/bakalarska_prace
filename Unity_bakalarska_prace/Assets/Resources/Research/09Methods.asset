@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b773706729449284ab5935b491f9d705, type: 3}
   m_Name: 09Methods
   m_EditorClassIdentifier: Assembly-CSharp::ResearchTechSO
-  id: methods
-  displayName: Methods
-  description: 
+  id: tech_methods
+  displayName: Modular Programming
+  description: Methods
   researchCost: 5000
   prerequisites:
   - {fileID: 11400000, guid: 8e3e260b10b106e429239b1c4ff7c29a, type: 2}

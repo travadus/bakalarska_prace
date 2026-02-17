@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b773706729449284ab5935b491f9d705, type: 3}
   m_Name: 07Arrays
   m_EditorClassIdentifier: Assembly-CSharp::ResearchTechSO
-  id: arrays
-  displayName: Arrays
-  description: 
+  id: tech_arrays
+  displayName: Data Structures I
+  description: Arrays
   researchCost: 1500
   prerequisites:
   - {fileID: 11400000, guid: 8b8a1759f1106694d8fab52fbaac61f9, type: 2}

@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b773706729449284ab5935b491f9d705, type: 3}
   m_Name: 03IfElse
   m_EditorClassIdentifier: Assembly-CSharp::ResearchTechSO
-  id: ifElse
-  displayName: If / else
-  description: 
+  id: tech_conditions
+  displayName: Logic Gates
+  description: If else statements
   researchCost: 350
   prerequisites:
   - {fileID: 11400000, guid: 3c7bef41949f4ce41b4aded2a1a8a875, type: 2}

@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b773706729449284ab5935b491f9d705, type: 3}
   m_Name: 05While
   m_EditorClassIdentifier: Assembly-CSharp::ResearchTechSO
-  id: while
-  displayName: While Loops
-  description: 
+  id: tech_loops
+  displayName: Looping Structures
+  description: While loops
   researchCost: 750
   prerequisites:
   - {fileID: 11400000, guid: b77fa70e3c009524497ca9d9e1d7ba0f, type: 2}

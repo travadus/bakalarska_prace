@@ -10,7 +10,7 @@ public class BuildingsManager : MonoBehaviour
 
     public Dictionary<int, SolarBuilding> allSolars = new Dictionary<int, SolarBuilding>();
 
-    public Dictionary<int, ResearchLab> allLabs = new Dictionary<int, ResearchLab>();
+    public Dictionary<int, ResearchLab> allResearchLabs = new Dictionary<int, ResearchLab>();
 
     // V budoucnu sem pøidáš tøeba:
     // public Dictionary<int, SolarBuilding> allSolars = ...

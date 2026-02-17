@@ -10,7 +10,8 @@ GameObject:
   m_Component:
   - component: {fileID: 1148846885615527582}
   - component: {fileID: 775548638364719793}
-  m_Layer: 0
+  - component: {fileID: 4614419368550069353}
+  m_Layer: 10
   m_Name: SolarPrefab
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -48,7 +49,29 @@ MonoBehaviour:
   BuildingName: 
   maxOutput: 5
   cleaningCost: 50
+  dustRate: 0.0002
   dirtLevel: 0
+--- !u!65 &4614419368550069353
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6341630156663449322}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 10, y: 2, z: 10}
+  m_Center: {x: 5, y: 0.5, z: 5}
 --- !u!1001 &127018413937887095
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -97,11 +120,38 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 903035314708071104, guid: dee08e661272ab14e8f96a8b6391135b, type: 3}
+      propertyPath: m_Layer
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 1215891163839320158, guid: dee08e661272ab14e8f96a8b6391135b, type: 3}
+      propertyPath: m_Layer
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 1802329968181499003, guid: dee08e661272ab14e8f96a8b6391135b, type: 3}
+      propertyPath: m_Layer
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 3119901200950637933, guid: dee08e661272ab14e8f96a8b6391135b, type: 3}
+      propertyPath: m_Layer
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 3435226211806742676, guid: dee08e661272ab14e8f96a8b6391135b, type: 3}
+      propertyPath: m_Layer
+      value: 10
+      objectReference: {fileID: 0}
     - target: {fileID: 5706529078574514340, guid: dee08e661272ab14e8f96a8b6391135b, type: 3}
       propertyPath: m_Name
       value: SolarBuildingVisual
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    - target: {fileID: 5706529078574514340, guid: dee08e661272ab14e8f96a8b6391135b, type: 3}
+      propertyPath: m_Layer
+      value: 10
+      objectReference: {fileID: 0}
+    m_RemovedComponents:
+    - {fileID: 2177810473134569682, guid: dee08e661272ab14e8f96a8b6391135b, type: 3}
+    - {fileID: 2464385327846709425, guid: dee08e661272ab14e8f96a8b6391135b, type: 3}
+    - {fileID: 6799045274647851482, guid: dee08e661272ab14e8f96a8b6391135b, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []

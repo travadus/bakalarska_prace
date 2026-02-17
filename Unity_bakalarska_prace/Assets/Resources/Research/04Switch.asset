@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b773706729449284ab5935b491f9d705, type: 3}
   m_Name: 04Switch
   m_EditorClassIdentifier: Assembly-CSharp::ResearchTechSO
-  id: switch
-  displayName: Switch
-  description: 
+  id: tech_switch
+  displayName: Advanced Branching
+  description: Switch statements
   researchCost: 500
   prerequisites:
   - {fileID: 11400000, guid: 0adf10ee39a7dde47a65d29f8dd721cd, type: 2}

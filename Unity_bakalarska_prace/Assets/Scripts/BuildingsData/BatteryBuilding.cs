@@ -86,4 +86,21 @@ public class BatteryBuilding : BuildingBase, IGridActor
     {
         currentCharge += amount;
     }
+
+    protected override string GetTooltipHeader()
+    {
+        return $"Battery Storage #{id}";
+    }
+
+    protected override string GetTooltipContent()
+    {
+        // Formátovaný string s barvièkama
+        string status = currentMode.ToString();
+        string color = "white";
+        if (currentMode == BatteryMode.Charging) color = "green";
+        if (currentMode == BatteryMode.Discharging) color = "red";
+
+        return $"Energy: {currentCharge:F1} / {maxStorageCapacity} MWh\n" +
+               $"Mode: <color={color}>{status}</color>";
+    }
 }

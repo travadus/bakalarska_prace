@@ -10,7 +10,8 @@ GameObject:
   m_Component:
   - component: {fileID: 4947395081414078530}
   - component: {fileID: 8068102696478658454}
-  m_Layer: 0
+  - component: {fileID: 7879214262939708713}
+  m_Layer: 10
   m_Name: ResearchLabPrefab
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -46,9 +47,30 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ResearchLab
   BuildingName: Research Lab
-  moneyCostPerTick: 50
-  rpGainPerTick: 10
-  isActive: 1
+  moneyCostPerTick: 250
+  rpGainPerTick: 1
+  isOperating: 0
+--- !u!65 &7879214262939708713
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2337023615267017075}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 10, y: 2, z: 10}
+  m_Center: {x: 5, y: 0.5, z: 5}
 --- !u!1001 &7043394774964044919
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -97,11 +119,38 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 903035314708071104, guid: af4d571f79a8fac42b2b7abd3697894f, type: 3}
+      propertyPath: m_Layer
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 1090702874850460811, guid: af4d571f79a8fac42b2b7abd3697894f, type: 3}
+      propertyPath: m_Layer
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 1215891163839320158, guid: af4d571f79a8fac42b2b7abd3697894f, type: 3}
+      propertyPath: m_Layer
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 3473295355558650083, guid: af4d571f79a8fac42b2b7abd3697894f, type: 3}
+      propertyPath: m_Layer
+      value: 10
+      objectReference: {fileID: 0}
     - target: {fileID: 5706529078574514340, guid: af4d571f79a8fac42b2b7abd3697894f, type: 3}
       propertyPath: m_Name
       value: ResearchLabVisual
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    - target: {fileID: 5706529078574514340, guid: af4d571f79a8fac42b2b7abd3697894f, type: 3}
+      propertyPath: m_Layer
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 6179701791851233093, guid: af4d571f79a8fac42b2b7abd3697894f, type: 3}
+      propertyPath: m_Layer
+      value: 10
+      objectReference: {fileID: 0}
+    m_RemovedComponents:
+    - {fileID: 2775291963165032506, guid: af4d571f79a8fac42b2b7abd3697894f, type: 3}
+    - {fileID: 2464385327846709425, guid: af4d571f79a8fac42b2b7abd3697894f, type: 3}
+    - {fileID: 6799045274647851482, guid: af4d571f79a8fac42b2b7abd3697894f, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []

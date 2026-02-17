@@ -1,12 +1,16 @@
 using UnityEngine;
+using System;
 
 public class ResearchLab : BuildingBase
 {
     [Header("Research Settings")]
-    public float moneyCostPerTick = 50f;
-    public float rpGainPerTick = 10f;
+    public float moneyCostPerTick = 250f;
+    public float rpGainPerTick = 1f;
 
-    public bool isActive = true;
+    private int lastProcessedHour = -1;
+
+    // Renamed from 'isActive' to 'isOperating' to match GameAPI requirements
+    public bool isOperating = true;
 
     private void Start()
     {
@@ -16,11 +20,11 @@ public class ResearchLab : BuildingBase
             TimeSystem.Instance.OnTick += HandleTick;
         }
 
-        // 2. Register to BuildingsManager using YOUR GENERIC METHOD
+        // 2. Register to BuildingsManager
+        // IMPORTANT: Ensure 'allResearchLabs' exists in BuildingsManager.cs as a public Dictionary
         if (BuildingsManager.Instance != null)
         {
-            // We pass 'this' and the specific dictionary for labs
-            BuildingsManager.Instance.RegisterBuilding(this, BuildingsManager.Instance.allLabs);
+            BuildingsManager.Instance.RegisterBuilding(this, BuildingsManager.Instance.allResearchLabs);
         }
     }
 
@@ -32,30 +36,54 @@ public class ResearchLab : BuildingBase
             TimeSystem.Instance.OnTick -= HandleTick;
         }
 
-        // 2. Unregister from BuildingsManager using YOUR GENERIC METHOD
+        // 2. Unregister from BuildingsManager
         if (BuildingsManager.Instance != null)
         {
-            BuildingsManager.Instance.UnregisterBuilding(this, BuildingsManager.Instance.allLabs);
+            BuildingsManager.Instance.UnregisterBuilding(this, BuildingsManager.Instance.allResearchLabs);
         }
     }
 
-    private void HandleTick(System.DateTime time)
+    /// <summary>
+    /// Called every in-game hour.
+    /// Consumes money and generates Research Points.
+    /// </summary>
+    private void HandleTick(DateTime time)
     {
-        if (!isActive) return;
+        // 1. Pokud je lab vypnutá, nedìlej nic
+        if (!isOperating) return;
 
-        if (EconomyManager.Instance != null && ResearchManager.Instance != null)
+        // 2. KONTROLA: Probìhla už v této herní hodinì platba?
+        // Tato podmínka se splní jen tehdy, když se v herním èase zmìní hodina (napø. z 8:50 na 9:00)
+        if (time.Hour != lastProcessedHour)
         {
-            // Try to spend money. "id" is assigned by BuildingsManager.RegisterBuilding
-            bool paid = EconomyManager.Instance.TrySpendMoney(moneyCostPerTick, $"Research Lab {id}");
-
-            if (paid)
+            if (EconomyManager.Instance != null && ResearchManager.Instance != null)
             {
-                ResearchManager.Instance.AddRP(rpGainPerTick);
+                // Zaplatíme za provoz na celou hodinu dopøedu
+                bool paid = EconomyManager.Instance.TrySpendMoney(moneyCostPerTick, $"Research Lab {id} Funding");
+
+                if (paid)
+                {
+                    // Uložíme si aktuální hodinu, aby se v dalším tiku (za 10 min) akce neopakovala
+                    lastProcessedHour = time.Hour;
+
+                    // Pøidáme RP za hodinu provozu
+                    ResearchManager.Instance.AddRP(rpGainPerTick);
+                }
+                else
+                {
+                    // Pokud nemáme peníze, vypneme lab
+                    isOperating = false;
+
+                    if (PlayerScriptEngine.Instance != null)
+                    {
+                        PlayerScriptEngine.Instance.LogMessage($"LAB {id}: Insufficient funds for the next hour. System halted.", Color.red);
+                    }
+                }
             }
         }
     }
 
-    // --- Overrides ---
+    // --- BuildingBase Overrides ---
 
     public override string GetBuildingType()
     {
@@ -64,12 +92,25 @@ public class ResearchLab : BuildingBase
 
     public override string GetStatusText()
     {
-        return isActive ? $"Generating {rpGainPerTick} RP/h" : "Paused";
+        if (!isOperating) return "OFFLINE";
+        return $"Running (-{moneyCostPerTick} €/h)";
     }
 
-    // Optional: Override for your generic logger in BuildingsManager
     public override string GetDebugInfo()
     {
-        return $"Cost: {moneyCostPerTick}, Gain: {rpGainPerTick}";
+        return $"State: {(isOperating ? "ON" : "OFF")} | RP Output: {rpGainPerTick}";
+    }
+
+    protected override string GetTooltipHeader()
+    {
+        return $"Research Lab #{id}";  
+    }
+
+    protected override string GetTooltipContent()
+    {
+        string state = isOperating ? "<color=green>ONLINE</color>" : "<color=red>OFFLINE</color>";
+        return $"Status: {state}\n" +
+               $"Cost: -{moneyCostPerTick} €/h\n" +
+               $"Output: +{rpGainPerTick} RP/h";
     }
 }

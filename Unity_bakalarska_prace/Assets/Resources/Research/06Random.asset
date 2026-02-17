@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b773706729449284ab5935b491f9d705, type: 3}
   m_Name: 06Random
   m_EditorClassIdentifier: Assembly-CSharp::ResearchTechSO
-  id: random
+  id: tech_random
   displayName: Random generator
-  description: 
+  description: Random numbers
   researchCost: 1000
   prerequisites:
   - {fileID: 11400000, guid: 0e4da1ad70a6b054a9ff92296b1919c4, type: 2}

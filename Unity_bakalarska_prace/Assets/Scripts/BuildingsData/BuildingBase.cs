@@ -39,4 +39,35 @@ public abstract class BuildingBase : MonoBehaviour
     {
         return "Active";
     }
+
+    private void OnMouseEnter()
+    {
+        // Zabráníme zobrazení, pokud zrovna stavíme nebo je otevřené menu
+        // if (EventSystem.current.IsPointerOverGameObject()) return; 
+
+        TooltipSystem.Instance.Show(GetTooltipContent(), GetTooltipHeader());
+    }
+
+    private void OnMouseExit()
+    {
+        TooltipSystem.Instance.Hide();
+    }
+
+    // Když myš zůstává na objektu, aktualizujeme text (aby se měnila čísla energie)
+    private void OnMouseOver()
+    {
+        // Jen pokud je tooltip aktivní, aktualizujeme text
+        TooltipSystem.Instance.Show(GetTooltipContent(), GetTooltipHeader());
+    }
+
+    // --- Virtuální metody pro přepsání v potomcích ---
+    protected virtual string GetTooltipHeader()
+    {
+        return GetBuildingType(); // Defaultně vrátí typ budovy
+    }
+
+    protected virtual string GetTooltipContent()
+    {
+        return GetStatusText(); // Defaultně vrátí status
+    }
 }

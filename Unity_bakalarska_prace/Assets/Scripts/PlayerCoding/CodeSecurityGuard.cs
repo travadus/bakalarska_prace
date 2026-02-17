@@ -92,7 +92,7 @@ public class CodeSecurityGuard : CSharpSyntaxWalker
         {
             if (!IsUnlocked("tech_random"))
             {
-                AddError(node, "RNG (Random) is locked! Research 'Stochastic Processes'.");
+                AddError(node, "RNG (Random) is locked! Research 'Random generator'.");
             }
         }
 
@@ -123,26 +123,28 @@ public class CodeSecurityGuard : CSharpSyntaxWalker
         base.VisitGenericName(node);
     }
 
-    // --- 9. METHODS (Defining own methods) ---
+    // --- 9. USER-DEFINED METHODS ---
     public override void VisitMethodDeclaration(MethodDeclarationSyntax node)
     {
-        // Every script has a "Run" method wrapper, we must allow that one (or HandleTick).
-        // Assuming user methods are inside the class body.
-        // NOTE: This logic assumes the player writes ONLY the method body in your UI, 
-        // or if they write full class, we need to distinguish their methods vs entry point.
+        string methodName = node.Identifier.Text;
 
-        // Simpler check: If player defines a NEW method inside the code.
-        // For the Bachelor thesis, let's assume specific method names are reserved, 
-        // or we check strictly if "tech_methods" is false.
-
-        if (node.Identifier.Text != "Run" && node.Identifier.Text != "Update")
+        // The entry point 'Main' is always allowed, as it is required for script execution.
+        // We must still traverse its body to validate the code inside.
+        if (methodName == "Main")
         {
-            if (!IsUnlocked("tech_methods"))
-            {
-                AddError(node, $"Defining custom method '{node.Identifier.Text}' is locked! Research 'Modular Programming'.");
-            }
+            base.VisitMethodDeclaration(node);
+            return;
         }
 
+        // Any method other than 'Main' is considered a custom user-defined function.
+        // This capability is restricted until the specific technology is researched.
+        if (!IsUnlocked("tech_methods"))
+        {
+            AddError(node, $"Defining custom method '{methodName}' is restricted. Research 'Modular Programming' to unlock function definitions.");
+            return;
+        }
+
+        // If the technology is unlocked, proceed with standard validation of the method body.
         base.VisitMethodDeclaration(node);
     }
 

@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b773706729449284ab5935b491f9d705, type: 3}
   m_Name: 08Lists
   m_EditorClassIdentifier: Assembly-CSharp::ResearchTechSO
-  id: lists
-  displayName: Lists
-  description: 
+  id: tech_lists
+  displayName: Data Structures II
+  description: Lists
   researchCost: 2200
   prerequisites:
   - {fileID: 11400000, guid: 738c02e544b040a4abbc3962b51b5c04, type: 2}

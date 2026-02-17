@@ -3,16 +3,16 @@ using UnityEngine;
 
 public static class GameAPI
 {
-    // --- REFERENCE ---
+    // --- REFERENCES ---
     public static MarketManager MarketSystem;
     public static EconomyManager EconomySystem => EconomyManager.Instance;
 
-    // --- LOGOVÁNÍ ---
+    // --- LOGGING EVENTS ---
     public static event Action<string> OnLogMessage;
 
     /// <summary>
-    /// Vypíše zprávu do herní konzole.
-    /// Pøíklad: Log("Cena je: " + price);
+    /// Prints a message to the in-game console.
+    /// Example: Log("Price is: " + price);
     /// </summary>
     public static void Log(object message)
     {
@@ -21,17 +21,13 @@ public static class GameAPI
     }
 
     // =================================================================================
-    // SEKCE: TRH A PENÍZE (Market & Economy)
+    // SECTION: MARKET & ECONOMY
     // =================================================================================
     #region Market & Economy
 
-    // =================================================================================
-    // SEKCE: TRH A PENÍZE (Market & Economy)
-    // =================================================================================
-
     /// <summary>
-    /// Nakoupí energii z globální sítì.
-    /// OPRAVA: Už nepíše "IMPORTED", ale jen "BUY ORDER", protože energie dorazí až pøi Tiku.
+    /// Purchases energy from the global grid.
+    /// Note: Energy arrives at the next Tick.
     /// </summary>
     public static void BuyEnergy(float amount)
     {
@@ -53,7 +49,7 @@ public static class GameAPI
 
                 bool success = false;
 
-                // SCÉNÁØ A: Cena je kladná (Musíme platit)
+                // SCENARIO A: Price is positive (Player pays money)
                 if (totalCost > 0)
                 {
                     if (EconomyManager.Instance.TrySpendMoney(totalCost, $"Order: {amount} MWh"))
@@ -65,7 +61,7 @@ public static class GameAPI
                         PlayerScriptEngine.Instance.LogMessage("ERROR: Not enough money to buy energy!", Color.red);
                     }
                 }
-                // SCÉNÁØ B: Cena je záporná (Dostaneme zaplaceno)
+                // SCENARIO B: Price is negative (Player gets paid to consume)
                 else
                 {
                     float gain = Mathf.Abs(totalCost);
@@ -76,11 +72,10 @@ public static class GameAPI
 
                 if (success)
                 {
-                    // 1. Zapíšeme do systému (dorazí pøíští Tik)
+                    // 1. Register import (arrives next tick)
                     EnergySystem.Instance.PlannedImport += amount;
 
-                    // 2. Hláška: JEN OBJEDNÁVKA (Žlutì)
-                    // Hráè ví, že to je na cestì. Až to dorazí, EnergySystem napíše zelenì "GRID INPUT".
+                    // 2. User Feedback
                     PlayerScriptEngine.Instance.LogMessage($"BUY ORDER: Waiting for {amount} MWh import...", Color.yellow);
                 }
             });
@@ -88,8 +83,8 @@ public static class GameAPI
     }
 
     /// <summary>
-    /// Zadá pøíkaz k prodeji energie.
-    /// Samotný prodej probìhne až v EnergySystem.
+    /// Submits an order to sell energy.
+    /// The actual sale happens in the EnergySystem during the next Tick.
     /// </summary>
     public static void SellEnergy(float amount)
     {
@@ -106,15 +101,14 @@ public static class GameAPI
                     return;
                 }
 
-                // Jen zapíšeme požadavek na export
+                // Register export request
                 EnergySystem.Instance.PlannedExport += amount;
-
             });
         }
     }
 
     /// <summary>
-    /// Vrátí aktuální tržní cenu za 1 MWh.
+    /// Returns the current market price for 1 MWh.
     /// </summary>
     public static float GetCurrentPrice()
     {
@@ -123,7 +117,7 @@ public static class GameAPI
     }
 
     /// <summary>
-    /// Vrátí aktuální zùstatek penìz na úètu hráèe.
+    /// Returns the current balance of the player's account.
     /// </summary>
     public static float GetMoneyAmount()
     {
@@ -131,7 +125,9 @@ public static class GameAPI
         return 0f;
     }
 
-    // Pomocná metoda pro kontrolu, zda má hráè dost penìz
+    /// <summary>
+    /// Helper method to check if the player can afford a specific amount.
+    /// </summary>
     public static bool CanAfford(float amount)
     {
         if (EconomySystem != null) return EconomySystem.GetBalance() >= amount;
@@ -202,7 +198,7 @@ public static class GameAPI
                 EnergySystem.Instance.ConsumeEnergyFromBus(energyToDeliver);
                 c.deliveredInCurrentCycle += energyToDeliver;
 
-                // PAY THE PLAYER: In the new system, they get paid per MWh delivered
+                // PAY THE PLAYER: Payment happens per MWh delivered
                 float earnedMoney = energyToDeliver * c.rewardPerMWh;
                 if (EconomyManager.Instance != null)
                 {
@@ -211,6 +207,7 @@ public static class GameAPI
 
                 PlayerScriptEngine.Instance.LogMessage($"DELIVERED: {energyToDeliver:F1} MWh to {c.contractType}. Earned: {earnedMoney:F1} €", Color.green);
 
+                // Update UI if open
                 if (ContractsUI.Instance != null && ContractsUI.Instance.IsWindowOpen())
                 {
                     ContractsUI.Instance.RefreshUI();
@@ -226,7 +223,7 @@ public static class GameAPI
     #endregion
 
     // =================================================================================
-    // SEKCE: BATERIE (Battery Management)
+    // SECTION: BATTERY MANAGEMENT
     // =================================================================================
     #region Battery Management
 
@@ -249,8 +246,7 @@ public static class GameAPI
     }
 
     /// <summary>
-    /// Vrátí procento nabití baterie (0.0 až 1.0).
-    /// Starý název: GetBatteryLevel
+    /// Returns battery charge percentage (0.0 to 1.0).
     /// </summary>
     public static float GetBatteryFillRatio(int id)
     {
@@ -263,8 +259,7 @@ public static class GameAPI
     }
 
     /// <summary>
-    /// Vrátí pøesné množství uložené energie v MWh.
-    /// Starý název: GetBatteryCharge
+    /// Returns exact amount of stored energy in MWh.
     /// </summary>
     public static float GetBatteryStoredMWh(int id)
     {
@@ -276,7 +271,7 @@ public static class GameAPI
     }
 
     /// <summary>
-    /// Vrátí maximální kapacitu baterie v MWh.
+    /// Returns maximum capacity of the battery in MWh.
     /// </summary>
     public static float GetBatteryCapacity(int id)
     {
@@ -288,7 +283,7 @@ public static class GameAPI
     }
 
     /// <summary>
-    /// Pøepne baterii do režimu NABÍJENÍ (bere energii ze sítì).
+    /// Sets battery to CHARGING mode (draws energy from grid).
     /// </summary>
     public static void ChargeBattery(int id)
     {
@@ -299,7 +294,7 @@ public static class GameAPI
     }
 
     /// <summary>
-    /// Pøepne baterii do režimu VYBÍJENÍ (posílá energii do sítì).
+    /// Sets battery to DISCHARGING mode (sends energy to grid).
     /// </summary>
     public static void DischargeBattery(int id)
     {
@@ -310,8 +305,7 @@ public static class GameAPI
     }
 
     /// <summary>
-    /// Vypne baterii (nebude dìlat nic).
-    /// Starý název: StopBattery
+    /// Sets battery to STANDBY mode (does nothing).
     /// </summary>
     public static void SetBatteryStandby(int id)
     {
@@ -324,7 +318,7 @@ public static class GameAPI
     #endregion
 
     // =================================================================================
-    // SEKCE: SOLÁRNÍ PANELY (Solar Management)
+    // SECTION: SOLAR MANAGEMENT
     // =================================================================================
     #region Solar Management
 
@@ -347,7 +341,7 @@ public static class GameAPI
     }
 
     /// <summary>
-    /// Vrátí aktuální výrobu panelu v MWh (už po odeètení špíny a mrakù).
+    /// Returns current output of the panel in MWh (after dirt and clouds calculation).
     /// </summary>
     public static float GetSolarOutput(int id)
     {
@@ -359,8 +353,8 @@ public static class GameAPI
     }
 
     /// <summary>
-    /// Vrátí zneèištìní panelu (0.00 až 1.00). 
-    /// 0.00 = Èistý, 1.00 = Špinavý (nevyrobí nic).
+    /// Returns dirt level (0.00 to 1.00).
+    /// 0.00 = Clean, 1.00 = Dirty (zero production).
     /// </summary>
     public static float GetSolarDirtLevel(int id)
     {
@@ -372,7 +366,7 @@ public static class GameAPI
     }
 
     /// <summary>
-    /// Zaplatí úklidové èety, aby panel vyèistily.
+    /// Pays maintenance crew to clean the solar panel.
     /// </summary>
     public static void CleanSolarPanel(int id)
     {
@@ -398,25 +392,75 @@ public static class GameAPI
         }
     }
 
-    // --- Helper pro Soláry ---
-    private static bool TryGetSolar(int id, out SolarBuilding solar)
-    {
-        solar = null;
-        if (BuildingsManager.Instance == null) return false;
-        if (BuildingsManager.Instance.allSolars.TryGetValue(id, out solar)) return true;
+    #endregion
 
-        ReportError($"Solar with ID {id} does not exist!");
+    // =================================================================================
+    // SECTION: RESEARCH LAB MANAGEMENT (NEW)
+    // =================================================================================
+    #region Research Management
+
+    public static int GetResearchLabCount()
+    {
+        if (BuildingsManager.Instance != null)
+            return BuildingsManager.Instance.allResearchLabs.Count;
+        return 0;
+    }
+
+    public static int[] GetResearchLabIDs()
+    {
+        if (BuildingsManager.Instance != null)
+        {
+            int[] keys = new int[BuildingsManager.Instance.allResearchLabs.Count];
+            BuildingsManager.Instance.allResearchLabs.Keys.CopyTo(keys, 0);
+            return keys;
+        }
+        return new int[0];
+    }
+
+    /// <summary>
+    /// Turns a specific Research Lab ON or OFF.
+    /// If active, it consumes money and generates Research Points (RP) every tick.
+    /// </summary>
+    public static void SetResearchLabState(int id, bool active)
+    {
+        if (PlayerScriptEngine.Instance != null)
+        {
+            PlayerScriptEngine.Instance.EnqueueAction(() =>
+            {
+                if (TryGetResearchLab(id, out var lab))
+                {
+                    // Check if state is actually changing to avoid spamming logs
+                    if (lab.isOperating != active)
+                    {
+                        lab.isOperating = active;
+                        string status = active ? "ONLINE" : "OFFLINE";
+                        Color c = active ? Color.green : Color.orange;
+                        PlayerScriptEngine.Instance.LogMessage($"LAB {id}: Systems {status}.", c);
+                    }
+                }
+            });
+        }
+    }
+
+    /// <summary>
+    /// Checks if a Research Lab is currently active.
+    /// </summary>
+    public static bool IsResearchLabActive(int id)
+    {
+        if (TryGetResearchLab(id, out var lab))
+        {
+            return lab.isOperating;
+        }
         return false;
     }
 
     #endregion
 
     // =================================================================================
-    // SEKCE: POÈASÍ A PØEDPOVÌÏ
+    // SECTION: WEATHER & FORECAST
     // =================================================================================
     #region Weather & Forecast
 
-    // Vrátí aktuální data o poèasí
     public static float GetCurrentWind()
     {
         if (WeatherSystem.Instance != null) return WeatherSystem.Instance.CurrentWeather.WindIntensity;
@@ -435,55 +479,84 @@ public static class GameAPI
         return 0f;
     }
 
-    // --- HLAVNÍ METODA PRO PØEDPOVÌÏ ---
-    // hoursAhead = 0 (teï), 1 (za hodinu), 24 (zítra touto dobou)
-    // Vrací objekt s daty, hráè si z nìj vytáhne, co potøebuje.
-    // Protože GameAPI vrací primitivní typy lépe, rozdìlíme to na konkrétní dotazy:
-
+    /// <summary>
+    /// Returns forecasted sun intensity for hours ahead (0-24).
+    /// </summary>
     public static float GetForecastSun(int hoursAhead)
     {
         if (WeatherSystem.Instance == null || TimeSystem.Instance == null) return 0f;
 
-        // 1. Zjistíme budoucí èas
         System.DateTime futureTime = TimeSystem.Instance.CurrentDateTime.AddHours(hoursAhead);
-
-        // 2. Zeptáme se WeatherSystemu na poèasí v ten èas
         WeatherData forecast = WeatherSystem.Instance.CalculateWeatherForTime(futureTime);
 
         return forecast.SunIntensity;
     }
 
+    /// <summary>
+    /// Returns forecasted wind intensity for hours ahead (0-24).
+    /// </summary>
     public static float GetForecastWind(int hoursAhead)
     {
         if (WeatherSystem.Instance == null || TimeSystem.Instance == null) return 0f;
+
         System.DateTime futureTime = TimeSystem.Instance.CurrentDateTime.AddHours(hoursAhead);
         WeatherData forecast = WeatherSystem.Instance.CalculateWeatherForTime(futureTime);
+
         return forecast.WindIntensity;
     }
 
     #endregion
 
     // =================================================================================
-    // SEKCE: INTERNÍ POMOCNÉ METODY (Helpers)
+    // SECTION: INTERNAL HELPERS
     // =================================================================================
     #region Helpers
 
-    // Zkratka pro získání baterie a kontrolu chyb.
-    // Díky "out" parametru vrací baterii pøímo, pokud existuje.
     private static bool TryGetBattery(int id, out BatteryBuilding battery)
     {
         battery = null;
-
         if (BuildingsManager.Instance == null) return false;
 
         if (BuildingsManager.Instance.allBatteries.TryGetValue(id, out battery))
         {
-            return true; // Našli jsme
+            return true;
         }
         else
         {
-            // Nenašli jsme -> Nahlásíme chybu
             ReportError($"Battery with ID {id} does not exist!");
+            return false;
+        }
+    }
+
+    private static bool TryGetSolar(int id, out SolarBuilding solar)
+    {
+        solar = null;
+        if (BuildingsManager.Instance == null) return false;
+
+        if (BuildingsManager.Instance.allSolars.TryGetValue(id, out solar))
+        {
+            return true;
+        }
+        else
+        {
+            ReportError($"Solar with ID {id} does not exist!");
+            return false;
+        }
+    }
+
+    private static bool TryGetResearchLab(int id, out ResearchLab lab)
+    {
+        lab = null;
+        if (BuildingsManager.Instance == null) return false;
+
+        // Assuming 'allResearchLabs' dictionary exists in BuildingsManager
+        if (BuildingsManager.Instance.allResearchLabs.TryGetValue(id, out lab))
+        {
+            return true;
+        }
+        else
+        {
+            ReportError($"Research Lab with ID {id} does not exist!");
             return false;
         }
     }

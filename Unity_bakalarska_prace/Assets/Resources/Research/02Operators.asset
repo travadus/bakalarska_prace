@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b773706729449284ab5935b491f9d705, type: 3}
   m_Name: 02Operators
   m_EditorClassIdentifier: Assembly-CSharp::ResearchTechSO
-  id: operators
-  displayName: Operators
-  description: 
+  id: tech_operators
+  displayName: Basic Math Operators
+  description: Math operators
   researchCost: 150
   prerequisites:
   - {fileID: 11400000, guid: 5f0c3024d3da62b4b835bbae551ee890, type: 2}

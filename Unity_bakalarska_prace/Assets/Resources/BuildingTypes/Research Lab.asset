@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: afcecaf39ce375643997397e670cc425, type: 3}
   m_Name: Research Lab
   m_EditorClassIdentifier: Assembly-CSharp::PlacedObjectTypeSO
-  nameString: 
+  nameString: ResearchLab
   prefab: {fileID: 4947395081414078530, guid: 89d60a1045d5f4a4a8b231262d8d5dbc, type: 3}
   visual: {fileID: 532015493586110460, guid: af4d571f79a8fac42b2b7abd3697894f, type: 3}
   width: 1

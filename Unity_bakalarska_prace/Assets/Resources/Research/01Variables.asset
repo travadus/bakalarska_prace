@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b773706729449284ab5935b491f9d705, type: 3}
   m_Name: 01Variables
   m_EditorClassIdentifier: Assembly-CSharp::ResearchTechSO
-  id: variables
-  displayName: Variables
-  description: 
+  id: tech_variables
+  displayName: Variable Storage
+  description: Variables
   researchCost: 50
   prerequisites: []

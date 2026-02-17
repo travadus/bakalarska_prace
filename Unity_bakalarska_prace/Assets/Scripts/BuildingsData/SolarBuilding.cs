@@ -1,3 +1,4 @@
+using System.Drawing;
 using UnityEngine;
 
 public class SolarBuilding : BuildingBase, IGridActor
@@ -19,6 +20,7 @@ public class SolarBuilding : BuildingBase, IGridActor
 
     private void Awake()
     {
+        // Nastavíme jméno pro tooltip/systém
         BuildingName = "Solar Farm";
     }
 
@@ -27,11 +29,10 @@ public class SolarBuilding : BuildingBase, IGridActor
         // 1. Registrace do Evidence (BuildingsManager)
         if (BuildingsManager.Instance != null)
         {
-            // Použijeme tvou novou generickou metodu!
             BuildingsManager.Instance.RegisterBuilding(this, BuildingsManager.Instance.allSolars);
         }
 
-        // 2. Registrace do Sítì (EnergySystem) - aby posílal elektøinu
+        // 2. Registrace do Sítì (EnergySystem)
         if (EnergySystem.Instance != null)
         {
             EnergySystem.Instance.RegisterActor(this);
@@ -40,7 +41,6 @@ public class SolarBuilding : BuildingBase, IGridActor
 
     private void OnDestroy()
     {
-        // Odhlášení pøi znièení
         if (BuildingsManager.Instance != null)
             BuildingsManager.Instance.UnregisterBuilding(this, BuildingsManager.Instance.allSolars);
 
@@ -66,11 +66,7 @@ public class SolarBuilding : BuildingBase, IGridActor
         // 3. Výpoèet výroby
         CurrentProduction = maxOutput * sunIntensity * efficiency;
 
-        // 4. Simulace špinìní (OPRAVA: Dìje se to vždy, i v noci)
-        // Odstranili jsme "if (sunIntensity > 0)"
-
-        // Použijeme tvou nastavitelnou promìnnou dustRate
-        // (Pokud ji nemáš, použij pevné èíslo napø. 0.0001f)
+        // 4. Simulace špinìní (vždy, i v noci)
         float change = dustRate * Random.Range(0.8f, 1.2f);
         dirtLevel += change;
 
@@ -80,10 +76,9 @@ public class SolarBuilding : BuildingBase, IGridActor
         return CurrentProduction;
     }
 
-    // Solár energii jen dává, nikdy ji nebere (ExtractEnergy jen potvrdí odbìr)
+    // Solár energii jen dává, nikdy ji nebere
     public void ExtractEnergy(float amount) { }
 
-    // Solár nic nespotøebovává
     public float GetRequestedDemand() => 0f;
     public void ReceiveEnergy(float amount) { }
 
@@ -91,12 +86,29 @@ public class SolarBuilding : BuildingBase, IGridActor
 
     public void CleanPanels()
     {
-        dirtLevel = 0f; // Lesk jako blesk
+        dirtLevel = 0f;
     }
 
-    // Pro výpis do konzole pøi startu
     public override string GetDebugInfo()
     {
-        return $"Max Output: {maxOutput} MWh";
+        return $"Max Output: {maxOutput} MWh, Dirt: {dirtLevel * 100:F1}%";
+    }
+
+    // --- TOOLTIP IMPLEMENTACE (Pro tvé nové okno) ---
+
+    protected override string GetTooltipHeader()
+    {
+        return $"Solar Power Plant #{id}";
+    }
+
+    protected override string GetTooltipContent()
+    {
+        // Zobrazíme výrobu a stav zneèištìní
+        // Pokud je špína vysoká, text zèervená
+        string dirtColor = dirtLevel > 0.2f ? "red" : "white";
+
+        return $"Output: {CurrentProduction:F1} / {maxOutput} MWh\n" +
+               $"Dirt Level: <color={dirtColor}>{dirtLevel * 100:F1}%</color>\n" +
+               $"Clean Cost: {cleaningCost} €";
     }
 }
