@@ -1,22 +1,42 @@
 ﻿using UnityEngine;
 
-// Třída, ze které budou dědit všechny budovy ve hře
+// Abstract base class for all buildings in the game
 public abstract class BuildingBase : MonoBehaviour
 {
-    public int id { get; private set; } = -1; // -1 znamená zatím nepřiřazeno
-    public string BuildingName; // Např. "Battery", "Solar Panel"
+    public int id { get; private set; } = -1; // -1 means not assigned yet
+    public string BuildingName; // E.g., "Battery", "Solar Panel"
 
-    // Tuto metodu zavolá Manager při registraci
+    // Called by BuildingsManager when registering the building
     public void Setup(int newID)
     {
         this.id = newID;
-        // Můžeš sem přidat třeba změnu názvu objektu v hierarchii pro přehlednost
+        // Rename gameObject in Hierarchy for better organization
         gameObject.name = $"{BuildingName}_{newID}";
     }
 
-    // Virtuální metoda pro logování (každá budova si ji může přepsat po svém)
+    // --- Virtual Methods (Children can override these) ---
+
+    /// <summary>
+    /// Returns debug information for the console logs.
+    /// </summary>
     public virtual string GetDebugInfo()
     {
-        return ""; // Základní budova nemá žádné extra info
+        return ""; // Default: No extra info
+    }
+
+    /// <summary>
+    /// Returns the category/type of the building (Used in UI).
+    /// </summary>
+    public virtual string GetBuildingType()
+    {
+        return "Unknown Building";
+    }
+
+    /// <summary>
+    /// Returns the current status description (e.g., "Charging", "Paused").
+    /// </summary>
+    public virtual string GetStatusText()
+    {
+        return "Active";
     }
 }

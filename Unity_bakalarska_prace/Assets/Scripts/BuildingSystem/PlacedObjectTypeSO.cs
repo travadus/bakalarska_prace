@@ -9,6 +9,7 @@ public class PlacedObjectTypeSO : ScriptableObject
     public Transform visual;
     public int width;
     public int length;
+    public float constructionCost;
 
     public List<Vector2Int> GetGridPositionList(Vector2Int offset)
     {

@@ -67,35 +67,34 @@ public class GridBuildingSystem : MonoBehaviour
 
     private void Update()
     {
-        // 1. Logika pro zrušení výbìru klávesou ESC
+        // 1. Deselect with ESC
         if (Input.GetKeyDown(KeyCode.Escape))
         {
             DeselectObjectType();
             return;
         }
 
-        // 2. Pokud nemáme vybranou budovu, nic nestavíme a konèíme Update
+        // 2. If nothing selected, do nothing
         if (placedObjectTypeSO == null)
         {
             return;
         }
 
-        // 3. Stavìní budovy
+        // 3. Building Logic
         if (Input.GetMouseButtonDown(0))
         {
-            // Kontrola, zda neklikáme do UI (tlaèítek)
+            // Check UI click
             if (EventSystem.current.IsPointerOverGameObject())
                 return;
 
-            grid.GetXZ(Mouse3D.GetMouseWorldPosition(), out int x, out int z);
+            Vector3 mouseWorldPosition = Mouse3D.GetMouseWorldPosition();
+            if (mouseWorldPosition == Vector3.zero) return;
 
-            Vector3 wp = Mouse3D.GetMouseWorldPosition();
-            if (wp == Vector3.zero) return; // Kliknutí mimo validní plochu (Mouse3D vrací zero)
+            grid.GetXZ(mouseWorldPosition, out int x, out int z);
 
-            // Kontrola hranic gridu
+            // Check grid bounds
             if (x < 0 || z < 0 || x >= grid.GetWidth() || z >= grid.GetHeight())
             {
-                // Debug.Log("Mimo hranice gridu!");
                 return;
             }
 
@@ -103,18 +102,55 @@ public class GridBuildingSystem : MonoBehaviour
 
             if (gridObject.CanBuild())
             {
-                // Instanciace objektu
-                Transform buildTransform = Instantiate(placedObjectTypeSO.prefab, grid.GetWorldPosition(x, z), Quaternion.identity);
-                gridObject.SetTransform(buildTransform);
+                // --- NEW: ECONOMY CHECK START ---
 
-                // Vyvolání eventu po položení (pro zvuk, èástice, atd.)
-                OnObjectPlaced?.Invoke(this, EventArgs.Empty);
+                // 1. Check if we have an EconomyManager instance
+                if (EconomyManager.Instance == null)
+                {
+                    Debug.LogError("EconomyManager is missing in the scene!");
+                    return;
+                }
+
+                // 2. Check if player can afford the building cost defined in ScriptableObject
+                // (Make sure you added 'public float constructionCost;' to PlacedObjectTypeSO)
+                float cost = placedObjectTypeSO.constructionCost;
+
+                if (EconomyManager.Instance.CanAfford(cost))
+                {
+                    // 3. DEDUCT MONEY
+                    // Using "Construction" as the category/reason for the log
+                    EconomyManager.Instance.TrySpendMoney(cost, $"Construction: {placedObjectTypeSO.nameString}");
+
+                    // 4. BUILD (Original logic)
+                    Transform buildTransform = Instantiate(placedObjectTypeSO.prefab, grid.GetWorldPosition(x, z), Quaternion.identity);
+                    gridObject.SetTransform(buildTransform);
+
+                    // 5. Fire Events
+                    OnObjectPlaced?.Invoke(this, EventArgs.Empty);
+
+                    // Optional: Visual/Audio feedback for spending money
+                    if (PlayerScriptEngine.Instance != null)
+                    {
+                        PlayerScriptEngine.Instance.LogSystemMessage($"Built {placedObjectTypeSO.nameString} for {cost} €.");
+                    }
+                }
+                else
+                {
+                    // PLAYER IS BROKE
+                    if (PlayerScriptEngine.Instance != null)
+                    {
+                        PlayerScriptEngine.Instance.LogMessage($"Insufficient funds! Required: {cost} €", Color.red);
+                    }
+                    else
+                    {
+                        Debug.Log("Not enough money!");
+                    }
+                }
+                // --- ECONOMY CHECK END ---
             }
             else
             {
-                // Zde mùžeš pozdìji napojit ten Pop-up
-                Debug.Log("Zde už nìco stojí!");
-                // UtilsClass.CreateWorldTextPopup("Cannot Build Here!", Mouse3D.GetMouseWorldPosition());
+                Debug.Log("Area is occupied!");
             }
         }
     }

@@ -6,23 +6,22 @@ public class EconomyManager : MonoBehaviour
 {
     public static EconomyManager Instance { get; private set; }
 
-    [Header("Nastavení")]
-    [SerializeField] private float startBalance = 1000f; // Startovní kapitál
+    [Header("Settings")]
+    [SerializeField] private float startBalance = 1000f;
 
-    [Header("Stav")]
+    [Header("Status")]
     [SerializeField] private float currentBalance;
 
-    // --- NOVÉ: Promìnná pro aktuální cenu elektøiny (z CSV) ---
-    // Tvùj CSV Reader sem každou hodinu zapíše novou cenu.
+    // Current electricity price per MWh (updated from CSV)
     public float currentElectricityPricePerMWh = 0f;
 
-    // Historie všech plateb
+    // Transaction history
     [SerializeField] private List<MoneyTransaction> transactionHistory = new List<MoneyTransaction>();
 
-    // Event, který oznámí zmìnu penìz (pro UI)
+    // UI Event
     public event Action<float> OnBalanceChanged;
 
-    // --- NOVÉ: Vlastnost "Money" pro rychlý pøístup (zkratka) ---
+    // Property shortcut
     public float Money => currentBalance;
 
     private void Awake()
@@ -33,14 +32,13 @@ public class EconomyManager : MonoBehaviour
 
     private void Start()
     {
-        // Inicializujeme UI hned na zaèátku
         OnBalanceChanged?.Invoke(currentBalance);
     }
 
-    // --- HLAVNÍ METODY ---
+    // --- MAIN METHODS ---
 
     /// <summary>
-    /// Pøidá peníze na úèet (Pøíjem)
+    /// Adds money to the account (Income).
     /// </summary>
     public void AddMoney(float amount, string description = "Income")
     {
@@ -56,8 +54,16 @@ public class EconomyManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Pokusí se utratit peníze. Pokud na to hráè nemá, vrátí false.
-    /// (Použij pro nákup baterií, nabíjení atd.)
+    /// --- PØIDÁNO: ZJIŠTÌNÍ DOSTUPNOSTI PROSTØEDKÙ ---
+    /// Checks if the player can afford a certain cost without spending it yet.
+    /// </summary>
+    public bool CanAfford(float amount)
+    {
+        return currentBalance >= amount;
+    }
+
+    /// <summary>
+    /// Attempts to spend money. Returns true if successful, false if not enough money.
     /// </summary>
     public bool TrySpendMoney(float amount, string description)
     {
@@ -66,21 +72,18 @@ public class EconomyManager : MonoBehaviour
         if (currentBalance >= amount)
         {
             currentBalance -= amount;
-            LogTransaction(-amount, description); // Ukládáme jako záporné èíslo
+            LogTransaction(-amount, description); // Store as negative
             OnBalanceChanged?.Invoke(currentBalance);
             return true;
         }
         else
         {
-            // Debug.Log("Insufficient funds for: " + description);
             return false;
         }
     }
 
     /// <summary>
-    /// --- NOVÉ ---
-    /// Odeète peníze "natvrdo", i když jde hráè do mínusu.
-    /// (Použij pro pokuty z kontraktù nebo pravidelné poplatky)
+    /// Forcefully subtracts money, even if balance goes negative (Penalties).
     /// </summary>
     public void SubtractMoney(float amount, string description = "Penalty/Expense")
     {
@@ -91,27 +94,22 @@ public class EconomyManager : MonoBehaviour
         OnBalanceChanged?.Invoke(currentBalance);
     }
 
-    // --- POMOCNÉ METODY ---
+    // --- HELPER METHODS ---
 
-    // Pomocná metoda pro zápis do historie
     private void LogTransaction(float amount, string description)
     {
         DateTime now = DateTime.MinValue;
 
-        // Získáme aktuální herní èas, pokud existuje
         if (TimeSystem.Instance != null)
         {
             now = TimeSystem.Instance.CurrentDateTime;
         }
 
-        // Tady pøedpokládám, že máš tøídu/strukturu MoneyTransaction definovanou jinde
         MoneyTransaction t = new MoneyTransaction(now, amount, description, currentBalance);
         transactionHistory.Add(t);
-
-        // Debug.Log($"TRANSACTION: {description} | {amount} EUR | Balance: {currentBalance}");
     }
 
-    // --- GETTERY (To, co ti chybìlo) ---
+    // --- GETTERS ---
 
     public float GetBalance()
     {
@@ -123,7 +121,6 @@ public class EconomyManager : MonoBehaviour
         return transactionHistory;
     }
 
-    // --- NOVÉ: Metoda pro získání ceny elektøiny ---
     public float GetCurrentElectricityPrice()
     {
         return currentElectricityPricePerMWh;

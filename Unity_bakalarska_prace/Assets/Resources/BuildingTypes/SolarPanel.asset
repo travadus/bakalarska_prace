@@ -10,10 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: afcecaf39ce375643997397e670cc425, type: 3}
-  m_Name: Battery
+  m_Name: SolarPanel
   m_EditorClassIdentifier: 
-  nameString: Battery
-  prefab: {fileID: 6386311639425995853, guid: aed4f85a5face1443ae52863e5f66448, type: 3}
-  visual: {fileID: 532015493586110460, guid: 3b0094f9313c1074a9b46a6c482095b9, type: 3}
+  nameString: SolarPanel
+  prefab: {fileID: 1148846885615527582, guid: b3820358a44a09e40bbf300a1e082488, type: 3}
+  visual: {fileID: 532015493586110460, guid: dee08e661272ab14e8f96a8b6391135b, type: 3}
   width: 1
   length: 1
+  constructionCost: 1000
