@@ -2,6 +2,9 @@ using UnityEngine;
 using TMPro;
 using UnityEngine.UI;
 
+/// <summary>
+/// A global singleton manager responsible for rendering dynamic tooltips.
+/// </summary>
 public class TooltipSystem : MonoBehaviour
 {
     public static TooltipSystem Instance { get; private set; }
@@ -13,7 +16,7 @@ public class TooltipSystem : MonoBehaviour
     public LayoutElement layoutElement;
 
     [Header("Settings")]
-    public int characterWrapLimit = 80; // Kdy se text zalomí
+    public int characterWrapLimit = 80;
 
     private RectTransform rectTransform;
 
@@ -26,24 +29,24 @@ public class TooltipSystem : MonoBehaviour
     private void Start()
     {
         rectTransform = tooltipObject.GetComponent<RectTransform>();
-        Hide(); // Na zaèátku schovat
+        Hide();
     }
 
+    /// <summary>
+    /// Synchronizes the tooltip position with the mouse cursor.
+    /// </summary>
     private void Update()
     {
         if (tooltipObject.activeSelf)
         {
             Vector2 mousePos = Input.mousePosition;
 
-            // Offset: Odsazení od špièky kurzoru (20 doprava, 20 dolù)
             float offsetX = 20f;
             float offsetY = 20f;
 
-            // Kontrola, aby okno nevyjelo z obrazovky vpravo
             float rightEdgeLimit = Screen.width - rectTransform.rect.width - offsetX;
             if (mousePos.x > rightEdgeLimit)
             {
-                // Pokud jsme moc vpravo, ukážeme tooltip vlevo od myši
                 mousePos.x -= (rectTransform.rect.width + offsetX);
             }
             else
@@ -51,11 +54,9 @@ public class TooltipSystem : MonoBehaviour
                 mousePos.x += offsetX;
             }
 
-            // Kontrola, aby okno nevyjelo z obrazovky dole
             float bottomEdgeLimit = rectTransform.rect.height + offsetY;
             if (mousePos.y < bottomEdgeLimit)
             {
-                // Pokud jsme moc dole, ukážeme tooltip nad myší
                 mousePos.y += offsetY;
             }
             else
@@ -63,11 +64,15 @@ public class TooltipSystem : MonoBehaviour
                 mousePos.y -= offsetY;
             }
 
-            // Nastavení pozice pøímo v pixelech obrazovky
             tooltipObject.transform.position = new Vector3(mousePos.x, mousePos.y, 0f);
         }
     }
 
+    /// <summary>
+    /// Activates the tooltip with content.
+    /// </summary>
+    /// <param name="content">The primary body of text.</param>
+    /// <param name="header">Optional header.</param>
     public void Show(string content, string header = "")
     {
         if (string.IsNullOrEmpty(header))
@@ -82,7 +87,6 @@ public class TooltipSystem : MonoBehaviour
 
         contentText.text = content;
 
-        // Logika pro zalamování textu (Layout Element)
         int headerLength = headerText.text.Length;
         int contentLength = contentText.text.Length;
 
@@ -90,10 +94,12 @@ public class TooltipSystem : MonoBehaviour
 
         tooltipObject.SetActive(true);
 
-        // Donutit Unity pøekreslit layout hned teï (aby neproblikla špatná velikost)
         LayoutRebuilder.ForceRebuildLayoutImmediate(rectTransform);
     }
 
+    /// <summary>
+    /// Disables the tooltip object.
+    /// </summary>
     public void Hide()
     {
         tooltipObject.SetActive(false);

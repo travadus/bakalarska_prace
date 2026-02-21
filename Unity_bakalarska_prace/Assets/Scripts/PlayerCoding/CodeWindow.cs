@@ -2,41 +2,37 @@ using UnityEngine;
 using TMPro;
 using UnityEngine.UI;
 
+/// <summary>
+/// Manages the front-end interface for the script editor window. 
+/// Handles real-time code editing, script execution control, and synchronized UI state management.
+/// </summary>
 public class CodeWindow : MonoBehaviour
 {
     [Header("UI Components")]
-    public TMP_InputField myInputField;      // Editor kódu
-    public Button runButton;                 // Tlaèítko Play/Stop
-    public TextMeshProUGUI runButtonText;    // Text uvnitø tlaèítka
-    public Image statusIndicator;            // Barevná kontrolka
-
+    public TMP_InputField myInputField;
+    public Button runButton;
+    public TextMeshProUGUI runButtonText;
+    public Image statusIndicator;
     public Button closeButton;
-
-    // ZDE JE ZMÌNA: Nadpis je teï InputField, aby šel pøepsat
     public TMP_InputField windowTitleInput;
 
-    private ScriptData currentData;          // Data, která toto okno edituje
+    private ScriptData currentData;
     private bool isRunningThisWindow = false;
 
     private void Start()
     {
-        // 1. Nastavení tlaèítka RUN/STOP
         if (runButton != null)
         {
             runButton.onClick.AddListener(OnRunClicked);
         }
 
-        // 2. Nastavení editoru kódu
         if (myInputField != null)
         {
-            // Když hráè píše kód, hned ho ukládáme do dat
             myInputField.onValueChanged.AddListener(OnCodeChanged);
         }
 
-        // 3. Nastavení pøejmenování (Nadpis okna)
         if (windowTitleInput != null)
         {
-            // Když hráè dopíše jméno (Enter nebo klikne jinam), uložíme to
             windowTitleInput.onEndEdit.AddListener(OnTitleRenamed);
         }
 
@@ -45,30 +41,28 @@ public class CodeWindow : MonoBehaviour
             closeButton.onClick.AddListener(OnCloseClicked);
         }
 
-        // 4. Pøihlášení k Enginu (posloucháme Play/Stop eventy)
         if (PlayerScriptEngine.Instance != null)
         {
             PlayerScriptEngine.Instance.OnCodeDeployed += OnCodeDeployed;
             PlayerScriptEngine.Instance.OnScriptStopped += OnScriptStopped;
         }
 
-        // 5. Prvotní naètení dat (pokud jsme je dostali døív než Start)
         if (currentData != null)
         {
             RefreshUI();
         }
 
-        UpdateStatusUI(false); // Výchozí stav (èervená)
+        UpdateStatusUI(false);
     }
 
     private void OnDestroy()
     {
-        // Úklid pøi zavøení okna
         if (PlayerScriptEngine.Instance != null)
         {
             PlayerScriptEngine.Instance.OnCodeDeployed -= OnCodeDeployed;
             PlayerScriptEngine.Instance.OnScriptStopped -= OnScriptStopped;
         }
+
         if (ScriptFileManager.Instance != null && currentData != null)
         {
             ScriptFileManager.Instance.UnregisterWindow(currentData);
@@ -77,50 +71,49 @@ public class CodeWindow : MonoBehaviour
 
     private void OnCloseClicked()
     {
-        // Prostì znièíme tento objekt.
-        // Zbytek zaøídí metoda OnDestroy automaticky.
         Destroy(gameObject);
     }
 
-    // --- HLAVNÍ METODA PRO NAÈTENÍ DAT ---
+    /// <summary>
+    /// Binds a specific script data model to the editor window and refreshes the display.
+    /// </summary>
+    /// <param name="data">The script data to be loaded.</param>
     public void LoadScript(ScriptData data)
     {
         currentData = data;
-        RefreshUI(); // Zavoláme pomocnou metodu pro vyplnìní textù
+        RefreshUI();
     }
 
+    /// <summary>
+    /// Synchronizes the UI input fields with the values stored in the current data model.
+    /// </summary>
     private void RefreshUI()
     {
         if (currentData == null) return;
 
-        // Nastavíme kód
         if (myInputField != null)
             myInputField.text = currentData.sourceCode;
 
-        // Nastavíme název
         if (windowTitleInput != null)
             windowTitleInput.text = currentData.scriptName;
     }
 
-    // --- LOGIKA TLAÈÍTKA RUN / STOP ---
+    /// <summary>
+    /// Toggles the execution state of the current script. 
+    /// </summary>
     private void OnRunClicked()
     {
         if (isRunningThisWindow)
         {
-            // Pokud bìžíme, tlaèítko funguje jako STOP
             PlayerScriptEngine.Instance.StopCurrentScript();
         }
         else
         {
-            // Pokud nebìžíme, tlaèítko funguje jako RUN
-
-            // Pojistka: Uložíme aktuální kód do dat
             if (currentData != null && myInputField != null)
             {
                 currentData.sourceCode = myInputField.text;
             }
 
-            // Spustíme kód
             if (myInputField != null)
             {
                 PlayerScriptEngine.Instance.CompileAndRun(myInputField.text, this);
@@ -128,15 +121,16 @@ public class CodeWindow : MonoBehaviour
         }
     }
 
-    // --- LOGIKA PØEJMENOVÁNÍ ---
+    /// <summary>
+    /// Updates the script's name.
+    /// </summary>
+    /// <param name="newName">The new name entered by the player.</param>
     private void OnTitleRenamed(string newName)
     {
         if (currentData != null)
         {
-            // 1. Zmìníme jméno v datech
             currentData.scriptName = newName;
 
-            // 2. Øekneme Manažerovi: "Hej, zmìnilo se jméno, pøepis seznam tlaèítek!"
             if (ScriptFileManager.Instance != null)
             {
                 ScriptFileManager.Instance.RefreshFileListUI();
@@ -144,7 +138,9 @@ public class CodeWindow : MonoBehaviour
         }
     }
 
-    // --- AUTOMATICKÉ UKLÁDÁNÍ KÓDU ---
+    /// <summary>
+    /// Listener that updates the underlying source code data as the player types.
+    /// </summary>
     private void OnCodeChanged(string newCode)
     {
         if (currentData != null)
@@ -153,23 +149,25 @@ public class CodeWindow : MonoBehaviour
         }
     }
 
-    // --- REAKCE NA ENGINE (Barvièky a text tlaèítka) ---
+    // --- ENGINE STATE SYNCHRONIZATION ---
 
-    // Nìkdo spustil skript (já nebo jiné okno)
     private void OnCodeDeployed(CodeWindow activeWindow)
     {
         if (activeWindow == this)
-            UpdateStatusUI(true);  // Jsem to já -> ZELENÁ
+            UpdateStatusUI(true);
         else
-            UpdateStatusUI(false); // Je to nìkdo jiný -> ÈERVENÁ
+            UpdateStatusUI(false);
     }
 
-    // Motor se zastavil
     private void OnScriptStopped()
     {
         UpdateStatusUI(false);
     }
 
+    /// <summary>
+    /// Updates the visual state of the window, including the status indicator and action button text.
+    /// </summary>
+    /// <param name="running">The current execution state.</param>
     private void UpdateStatusUI(bool running)
     {
         isRunningThisWindow = running;

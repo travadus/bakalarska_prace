@@ -2,28 +2,33 @@ using UnityEngine;
 using TMPro;
 using UnityEngine.UI;
 
+/// <summary>
+/// Represents a single selectable UI item within the script list.
+/// </summary>
 public class ScriptListItem : MonoBehaviour
 {
     [Header("UI References")]
-    public TextMeshProUGUI nameText; // Text na tlaèítku
+    public TextMeshProUGUI nameText;
 
-    private ScriptData myData;       // Data, která toto tlaèítko drží
+    private ScriptData myData;
 
+    /// <summary>
+    /// Initializes the UI element with the provided script data and sets up interaction listeners.
+    /// </summary>
+    /// <param name="data">The underlying data model associated with this list item.</param>
     public void Setup(ScriptData data)
     {
         myData = data;
         nameText.text = data.scriptName;
 
-        // Nastavíme, co se stane po kliknutí
         GetComponent<Button>().onClick.AddListener(OnClick);
     }
 
+    /// <summary>
+    /// Handles the button click event, prompting the manager to open the associated script in the editor.
+    /// </summary>
     private void OnClick()
     {
-        // Øekneme manažerovi: "Otevøi editor pro moje data"
         ScriptFileManager.Instance.OpenEditorFor(myData);
-
-        // Volitelnì: Zavøeme panel se seznamem (pokud to tak chceš)
-        // ScriptFileManager.Instance.CloseScriptsPanel();
     }
 }

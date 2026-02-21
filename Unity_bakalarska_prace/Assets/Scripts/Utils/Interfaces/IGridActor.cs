@@ -1,17 +1,20 @@
+using System;
+
 public interface IGridActor
 {
-    // FÁZE 1: PØÍTOK (Kolik mùeš dodat do sítì?)
-    // Vrací mnoství energie (MWh), kterou budova TEÏ nabízí síti.
+    // --- SUPPLY (PRODUCER) ---
+
+    /// <summary> Returns currently available supply in MWh. </summary>
     float GetAvailableSupply();
 
-    // Pokud si sí energii vezme, zavolá tuto metodu, aby ji budova odeèetla.
+    /// <summary> Finalizes energy extraction from the actor. </summary>
     void ExtractEnergy(float amount);
 
+    // --- DEMAND (CONSUMER) ---
 
-    // FÁZE 2: ODBÌR (Kolik chceš ze sítì?)
-    // Vrací mnoství energie (MWh), kterou budova TEÏ potøebuje.
+    /// <summary> Returns requested energy demand in MWh. </summary>
     float GetRequestedDemand();
 
-    // Sí pošle energii budovì (mùe poslat ménì, ne budova chtìla, pokud je nedostatek).
+    /// <summary> Delivers allocated energy to the actor. </summary>
     void ReceiveEnergy(float amount);
 }

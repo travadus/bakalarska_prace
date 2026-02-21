@@ -1,7 +1,13 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 using TMPro;
 
+/// <summary>
+/// Assembles the research tree user interface. 
+/// Manages the collection of nodes, renders visual connections, 
+/// and handles interaction between the UI and the research logic.
+/// </summary>
 public class ResearchUI : MonoBehaviour
 {
     [Header("Managers")]
@@ -21,13 +27,15 @@ public class ResearchUI : MonoBehaviour
 
         foreach (var node in allNodes)
         {
-            // Dùležité: Lambda výraz pro pøedání konkrétního node
             node.button.onClick.AddListener(() => OnNodeClicked(node));
         }
 
         RefreshUI();
     }
 
+    /// <summary>
+    /// Synchronizes the research points display with the current state.
+    /// </summary>
     private void Update()
     {
         if (ResearchManager.Instance != null && rpDisplay != null)
@@ -36,6 +44,9 @@ public class ResearchUI : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Triggers a state update for all registered research nodes.
+    /// </summary>
     private void RefreshUI()
     {
         foreach (var node in allNodes)
@@ -44,13 +55,15 @@ public class ResearchUI : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Renders visual connection lines between nodes and their assigned parents.
+    /// </summary>
     private void DrawConnections()
     {
         if (connectionManager == null) return;
 
         foreach (var node in allNodes)
         {
-            // Kreslíme èáry podle tlaèítek, která jsi pøetáhl v Inspectoru
             foreach (var parent in node.parentButtons)
             {
                 if (parent != null)
@@ -65,28 +78,26 @@ public class ResearchUI : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Handles node interaction by attempting to unlock the associated technology.
+    /// </summary>
+    /// <param name="node">The research node that was interacted with.</param>
     public void OnNodeClicked(ResearchNode node)
     {
         if (ResearchManager.Instance == null || node.techSO == null) return;
-
-        // --- TOTO JE TA OPRAVA ---
-        // Manager sám zkontroluje peníze, prerekvizity a pokud vše klapne,
-        // odeète body a odemkne technologii. Vrátí true/false.
 
         bool success = ResearchManager.Instance.TryUnlockTech(node.techSO);
 
         if (success)
         {
-            // Refresh visuals immediately
             RefreshUI();
-
-            // Volitelnì: Pøehrát zvuk
         }
         else
         {
-            // Pokud se to nepovedlo (napø. málo bodù)
             if (PlayerScriptEngine.Instance != null)
+            {
                 PlayerScriptEngine.Instance.LogMessage($"Cannot research {node.techSO.displayName}! Not enough points or locked.", Color.red);
+            }
         }
     }
 }

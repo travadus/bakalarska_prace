@@ -1,10 +1,14 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
 
+/// <summary>
+/// Implements a flexible camera controller.
+/// </summary>
 public class MyCameraController : MonoBehaviour
 {
     public Transform cameraTransform;
 
+    [Header("Movement Settings")]
     public float normalSpeed;
     public float fastSpeed;
     public float movementSpeed;
@@ -12,9 +16,11 @@ public class MyCameraController : MonoBehaviour
     public float rotationAmount;
     public Vector3 zoomAmount;
 
+    [Header("Mouse Sensitivity")]
     public float mouseZoomSensitivity;
     public float mouseRotationSensitivity;
 
+    [Header("Target Vectors")]
     public Vector3 newPosition;
     public Quaternion newRotation;
     public Vector3 newZoom;
@@ -26,7 +32,6 @@ public class MyCameraController : MonoBehaviour
         newZoom = cameraTransform.localPosition;
     }
 
-
     void Update()
     {
         HandleMovementInput();
@@ -37,12 +42,12 @@ public class MyCameraController : MonoBehaviour
     {
         if (!IsTypingInUI())
         {
-            // Zoom koleèkem myši
+            // Scroll-wheel based distance adjustment
             float scroll = Input.mouseScrollDelta.y;
             if (Mathf.Abs(scroll) > 0.01f)
                 newZoom += zoomAmount * scroll * mouseZoomSensitivity;
 
-            // Rotace pøi držení prostøedního tlaèítka
+            // Middle-mouse button orbital rotation tracking
             if (Input.GetMouseButton(2))
             {
                 float mouseX = Input.GetAxis("Mouse X");
@@ -51,9 +56,9 @@ public class MyCameraController : MonoBehaviour
         }
     }
 
-
     void HandleMovementInput()
     {
+        // Toggle movement speed
         if (Input.GetKey(KeyCode.LeftShift))
         {
             movementSpeed = fastSpeed;
@@ -101,22 +106,21 @@ public class MyCameraController : MonoBehaviour
             }
         }
 
-        
-
         transform.position = Vector3.Lerp(transform.position, newPosition, Time.deltaTime * movementTime);
         transform.rotation = Quaternion.Lerp(transform.rotation, newRotation, Time.deltaTime * movementTime);
         cameraTransform.localPosition = Vector3.Lerp(cameraTransform.localPosition, newZoom, Time.deltaTime * movementTime);
-
     }
 
+    /// <summary>
+    /// Used to prevent camera movement commands while typing.
+    /// </summary>
+    /// <returns>True if an InputField is active; otherwise, false.</returns>
     private bool IsTypingInUI()
     {
         GameObject selected = EventSystem.current.currentSelectedGameObject;
         if (selected == null) return false;
 
-        // Zda je aktivní InputField nebo TMP_InputField
         return selected.GetComponent<UnityEngine.UI.InputField>() != null
             || selected.GetComponent<TMPro.TMP_InputField>() != null;
     }
-
 }

@@ -2,65 +2,47 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using TMPro;
 
+/// <summary> Manages adaptive window resizing (auto-expansion and manual drag). </summary>
 public class SmartWindowController : MonoBehaviour
 {
-    [Header("Komponenty")]
+    [Header("Components")]
     public RectTransform windowRect;
     public TMP_InputField inputField;
-    public RectTransform contentRect; // Content uvnitø ScrollView
+    public RectTransform contentRect;
 
-    [Header("Nastavení Minimální velikosti")]
+    [Header("Constraints")]
     public float minWidth = 300f;
-    // Výpoèet: (FontSize * LineHeight * 4) + Padding. 
-    // Pokud máš font 20 a øádkování 1.2, jeden øádek je cca 24px. 4 øádky = cca 100px.
     public float minHeight = 150f;
-
-    [Header("Auto-Resize Settings")]
-    public float widthPadding = 50f; // Místo navíc vpravo (pro èísla øádkù a okraj)
+    public float widthPadding = 50f;
 
     private void Start()
     {
-        // Posloucháme zmìny v textu pro automatické rozšiøování
         inputField.onValueChanged.AddListener(OnTextChanged);
 
-        // Místo enableWordWrapping = false použijeme toto:
         inputField.textComponent.textWrappingMode = TextWrappingModes.NoWrap;
-
-        // Overflow mode (aby text "utíkal" doprava a nebyl oøíznutý)
         inputField.textComponent.overflowMode = TextOverflowModes.ScrollRect;
     }
 
-    // --- LOGIKA 1: AUTOMATICKÉ ROZŠIØOVÁNÍ (Když píšeš) ---
+    /// <summary> Auto-expands window width based on text preferred width. </summary>
     private void OnTextChanged(string text)
     {
-        // Zmìøíme, jak široký je text na nejdelším øádku
-        float textWidth = inputField.textComponent.preferredWidth;
+        float requiredWidth = inputField.textComponent.preferredWidth + widthPadding;
 
-        // Pokud je text širší než aktuální okno (mínus padding), roztáhneme okno
-        float requiredWidth = textWidth + widthPadding;
-
-        // Roztáhneme okno pouze pokud je text delší než aktuální šíøka okna
-        // A zároveò respektujeme, že uživatel mohl okno ruènì zvìtšit víc, než je text.
         if (requiredWidth > windowRect.sizeDelta.x)
         {
             SetWindowSize(requiredWidth, windowRect.sizeDelta.y);
         }
     }
 
-    // --- LOGIKA 2: MANUÁLNÍ RESIZE (Voláno z úchytù) ---
-
+    /// <summary> Manual resize logic triggered by UI handles. </summary>
     public void OnDragResize(Vector2 deltaDrag, bool horizontal, bool vertical)
     {
         Vector2 newSize = windowRect.sizeDelta;
 
         if (horizontal) newSize.x += deltaDrag.x;
-        if (vertical) newSize.y -= deltaDrag.y; // Y je v UI èasto invertované (taháš dolù = minus y ve screen space, ale plus velikost)
+        if (vertical) newSize.y -= deltaDrag.y;
 
-        // Aplikujeme limity
-
-        // 1. Spoèítáme minimální šíøku podle textu (text musí být vždy vidìt)
         float currentTextMinWidth = inputField.textComponent.preferredWidth + widthPadding;
-        // Finální minimální šíøka je buï základní (300), nebo ta, co vyžaduje text (pokud je delší)
         float dynamicMinWidth = Mathf.Max(minWidth, currentTextMinWidth);
 
         newSize.x = Mathf.Max(newSize.x, dynamicMinWidth);

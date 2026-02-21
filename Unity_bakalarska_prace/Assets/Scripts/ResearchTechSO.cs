@@ -1,24 +1,27 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// Defines the data structure and configuration for a single technology node within the research tree.
+/// </summary>
 [CreateAssetMenu(fileName = "NewTech", menuName = "ScriptableObjects/Research")]
 public class ResearchTechSO : ScriptableObject
 {
     [Header("Identity")]
-    public string id;               // Unikátní ID (napø. "tech_variables")
-    public string displayName;      // Název pro UI (napø. "Variable Storage")
+    public string id;
+    public string displayName;
     [TextArea] public string description;
 
     [Header("Economy")]
-    public int researchCost;        // Cena v RP
+    public int researchCost;
 
     [Header("Progression")]
-    // Seznam technologií, které musí být odemèeny pøed touto
     public List<ResearchTechSO> prerequisites;
 
     /// <summary>
-    /// Checks if all parent technologies are unlocked.
+    /// Evaluates whether all required parent technologies have been successfully unlocked by the player.
     /// </summary>
+    /// <returns>True if all prerequisite technologies are unlocked; otherwise, false.</returns>
     public bool ArePrerequisitesMet()
     {
         if (ResearchManager.Instance == null) return false;

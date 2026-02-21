@@ -2,6 +2,9 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
+/// <summary>
+/// Manages the contracts user interface.
+/// </summary>
 public class ContractsUI : MonoBehaviour
 {
     public static ContractsUI Instance { get; private set; }
@@ -23,6 +26,9 @@ public class ContractsUI : MonoBehaviour
         if (windowPanel != null) windowPanel.SetActive(false);
     }
 
+    /// <summary>
+    /// Toggles the visibility of the contract window.
+    /// </summary>
     public void ToggleWindow()
     {
         if (windowPanel == null) return;
@@ -35,17 +41,19 @@ public class ContractsUI : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Reconstructs the contract list by clearing the current display and instantiating 
+    /// new entries for each contract from the manager.
+    /// </summary>
     public void RefreshUI()
     {
         if (contentArea == null || contractPrefab == null || ContractsManager.Instance == null) return;
 
-        // 1. Clear old items
         foreach (Transform child in contentArea)
         {
             Destroy(child.gameObject);
         }
 
-        // 2. Spawn current contracts
         foreach (Contract c in ContractsManager.Instance.allContracts)
         {
             if (c.status == ContractStatus.Completed || c.status == ContractStatus.Failed)
@@ -58,17 +66,15 @@ public class ContractsUI : MonoBehaviour
 
             if (texts.Length >= 2)
             {
-                // Title and Tier
                 string tierColor = GetTierColorHex(c.tier);
                 texts[0].text = $"<b>{c.contractType}</b> <color={tierColor}>[{c.tier}]</color>";
 
-                // Details based on the new Data-Driven design
                 ContractConfig config = ContractDatabase.GetConfig(c.contractType);
                 string cycleTypeStr = c.cycleType.ToString();
 
                 if (c.status == ContractStatus.Available)
                 {
-                    // :F1 oøízne kvótu na 1 des. místo, :F0 oøízne peníze na celá èísla
+                    // Formats values for readability
                     texts[1].text = $"Type: {config.GetFormattedDescription()}\nQuota: {c.targetMWhPerCycle:F1} MWh / {cycleTypeStr} | Pay: <color=#00FF00>{c.rewardPerMWh:F0} €/MWh</color>\nDuration: {c.durationDays} days";
                 }
                 else if (c.status == ContractStatus.Active)
@@ -98,6 +104,10 @@ public class ContractsUI : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Handles the contract acceptance event.
+    /// </summary>
+    /// <param name="contractId">The unique ID of the contract.</param>
     private void OnAcceptButtonClicked(int contractId)
     {
         if (ContractsManager.Instance != null)
@@ -107,6 +117,11 @@ public class ContractsUI : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Maps contract tiers to specific color codes.
+    /// </summary>
+    /// <param name="tier">The tier name string.</param>
+    /// <returns>A hex color string.</returns>
     private string GetTierColorHex(string tier)
     {
         switch (tier)

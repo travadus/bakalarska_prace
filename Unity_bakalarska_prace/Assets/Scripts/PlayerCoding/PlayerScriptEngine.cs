@@ -12,6 +12,9 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Emit;
 using TMPro;
 
+/// <summary>
+/// The central execution engine responsible for compiling and running player-written scripts.
+/// </summary>
 public class PlayerScriptEngine : MonoBehaviour
 {
     [Header("UI Reference")]
@@ -24,7 +27,6 @@ public class PlayerScriptEngine : MonoBehaviour
     private MethodInfo cachedMethod;
     private List<MetadataReference> cachedReferences;
 
-    // Queue for safe execution of Unity API on the main thread
     private ConcurrentQueue<Action> mainThreadQueue = new ConcurrentQueue<Action>();
 
     private Thread executionThread;
@@ -45,37 +47,38 @@ public class PlayerScriptEngine : MonoBehaviour
     {
         LoadReferences();
 
-        // 1. Subscribe to logs
         GameAPI.OnLogMessage += (msg) => EnqueueAction(() => LogToConsole(msg, Color.white));
 
-        // 2. Subscribe to Time System ticks
         if (TimeSystem.Instance != null)
         {
             TimeSystem.Instance.OnTick += ExecutePlayerTick;
         }
     }
 
+    /// <summary>
+    /// Processes the main thread queue to execute calls from background threads.
+    /// </summary>
     private void Update()
     {
-        // Execute queued actions on the main thread
         while (mainThreadQueue.TryDequeue(out Action action))
         {
             action.Invoke();
         }
     }
 
-    // --- MAIN EXECUTION METHOD (Called by Play Button) ---
+    /// <summary>
+    /// Security validation, sanitization, compilation,
+    /// and runtime instantiation of the provided source code.
+    /// </summary>
+    /// <param name="sourceCode">The raw script content.</param>
+    /// <param name="senderWindow">The UI window instance initiating the call.</param>
     public void CompileAndRun(string sourceCode, CodeWindow senderWindow)
     {
-        // 1. Always stop previous script first
         StopCurrentScript();
         ClearConsole();
 
-        // --- STEP 2: SECURITY & RESEARCH CHECK (Roslyn Guard) ---
-        // Before we even try to compile, we check if the code uses locked features.
-
         SyntaxTree tree = CSharpSyntaxTree.ParseText(sourceCode);
-        CodeSecurityGuard guard = new CodeSecurityGuard(); // Guard checks ResearchManager internally
+        CodeSecurityGuard guard = new CodeSecurityGuard();
         guard.Visit(tree.GetRoot());
 
         if (guard.FoundErrors.Count > 0)
@@ -85,14 +88,11 @@ public class PlayerScriptEngine : MonoBehaviour
             {
                 LogToConsole(error, Color.red);
             }
-            // STOP HERE! Do not compile.
             return;
         }
 
         LogToConsole("Security check passed. Compiling...", Color.yellow);
-        // ---------------------------------------------------------
 
-        // --- STEP 3: COMPILATION ---
         string cleanCode = SanitizeCode(sourceCode);
         string finalSource = WrapCode(cleanCode);
 
@@ -100,7 +100,6 @@ public class PlayerScriptEngine : MonoBehaviour
 
         if (assembly != null)
         {
-            // Create instance of the UserScript class
             CreateScriptInstance(assembly);
 
             if (cachedMethod != null)
@@ -108,13 +107,14 @@ public class PlayerScriptEngine : MonoBehaviour
                 isScriptActive = true;
                 LogToConsole("System ONLINE. Waiting for Game Tick...", Color.green);
 
-                // Notify the window that code was successfully deployed
                 OnCodeDeployed?.Invoke(senderWindow);
             }
         }
     }
 
-    // --- BUTTON: STOP ---
+    /// <summary>
+    /// Stops active script and aborts the execution thread if necessary.
+    /// </summary>
     public void StopCurrentScript()
     {
         isScriptActive = false;
@@ -123,13 +123,15 @@ public class PlayerScriptEngine : MonoBehaviour
         OnScriptStopped?.Invoke();
     }
 
-    // --- AUTOMATIC EXECUTION ON TICK ---
+    /// <summary>
+    /// Triggered by the global time system. Spawns a background thread to execute the script's Main method 
+    /// and initiates a watchdog coroutine to prevent execution timeouts.
+    /// </summary>
+    /// <param name="gameTime">The current timestamp.</param>
     private void ExecutePlayerTick(DateTime gameTime)
     {
-        // If script is inactive or invalid, do nothing
         if (!isScriptActive || compiledInstance == null || cachedMethod == null) return;
 
-        // Run Main() in a separate thread for safety
         executionThread = new Thread(() =>
         {
             try
@@ -141,7 +143,6 @@ public class PlayerScriptEngine : MonoBehaviour
                 EnqueueAction(() =>
                 {
                     LogToConsole($"Runtime Error: {ex.InnerException?.Message ?? ex.Message}", Color.red);
-                    // On runtime error, stop the script
                     StopCurrentScript();
                 });
             }
@@ -150,11 +151,13 @@ public class PlayerScriptEngine : MonoBehaviour
         executionThread.IsBackground = true;
         executionThread.Start();
 
-        // SAFETY WATCHDOG
-        // If the script runs longer than 0.5s (infinite loop), kill it.
         StartCoroutine(WatchdogCoroutine(executionThread));
     }
 
+    /// <summary>
+    /// Monitors script execution time. If the thread remains active beyond the threshold, 
+    /// it is terminated to prevent main thread starvation or infinite loops.
+    /// </summary>
     private IEnumerator WatchdogCoroutine(Thread thread)
     {
         yield return new WaitForSeconds(0.5f);
@@ -166,8 +169,6 @@ public class PlayerScriptEngine : MonoBehaviour
         }
     }
 
-    // --- COMPILATION HELPERS ---
-
     private void CreateScriptInstance(Assembly assembly)
     {
         Type type = assembly.GetType(wrapperClassName);
@@ -175,7 +176,6 @@ public class PlayerScriptEngine : MonoBehaviour
 
         compiledInstance = Activator.CreateInstance(type);
 
-        // Look for "Main" method
         MethodInfo method = type.GetMethod("Main", BindingFlags.Public | BindingFlags.Instance);
 
         if (method != null)
@@ -189,17 +189,19 @@ public class PlayerScriptEngine : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Wraps the player's code into a class structure with static API access.
+    /// </summary>
     private string WrapCode(string playerCode)
     {
         StringBuilder sb = new StringBuilder();
         sb.AppendLine("using System;");
         sb.AppendLine("using System.Collections.Generic;");
-        sb.AppendLine("using static GameAPI;"); // Enables direct access to API methods
+        sb.AppendLine("using static GameAPI;");
 
         sb.AppendLine($"public class {wrapperClassName}");
         sb.AppendLine("{");
 
-        // Map lines for correct error reporting
         sb.AppendLine("#line 1 \"PlayerEditor\"");
         sb.AppendLine(playerCode);
         sb.AppendLine("#line default");
@@ -211,7 +213,6 @@ public class PlayerScriptEngine : MonoBehaviour
 
     private Assembly Compile(string sourceCode)
     {
-        // Use your existing Compiler helper
         return PlayerScriptCompiler.Compile(sourceCode, cachedReferences, (err) => LogToConsole(err, Color.red));
     }
 
@@ -223,7 +224,6 @@ public class PlayerScriptEngine : MonoBehaviour
         foreach (var asm in assemblies) cachedReferences.Add(MetadataReference.CreateFromFile(asm.Location));
     }
 
-    // --- UTILS ---
     public void EnqueueAction(Action action) => mainThreadQueue.Enqueue(action);
     private string SanitizeCode(string input) => input?.Replace("\u200B", "").Replace("\uFEFF", "") ?? "";
 
@@ -260,7 +260,7 @@ public class PlayerScriptEngine : MonoBehaviour
             consoleOutput.ForceLabelUpdate();
             if (consoleOutput.verticalScrollbar != null)
             {
-                consoleOutput.verticalScrollbar.value = 0f; // 0 usually means bottom in Unity UI
+                consoleOutput.verticalScrollbar.value = 1f;
             }
             consoleOutput.caretPosition = consoleOutput.text.Length;
         }

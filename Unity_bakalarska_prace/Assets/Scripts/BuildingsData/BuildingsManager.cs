@@ -1,19 +1,16 @@
 using UnityEngine;
 using System.Collections.Generic;
 
+/// <summary>
+/// Management system for registering, tracking, and unregistering all placeable buildings.
+/// </summary>
 public class BuildingsManager : MonoBehaviour
 {
     public static BuildingsManager Instance;
 
-    // Slovník pro baterie (aby je GameAPI našlo)
     public Dictionary<int, BatteryBuilding> allBatteries = new Dictionary<int, BatteryBuilding>();
-
     public Dictionary<int, SolarBuilding> allSolars = new Dictionary<int, SolarBuilding>();
-
     public Dictionary<int, ResearchLab> allResearchLabs = new Dictionary<int, ResearchLab>();
-
-    // V budoucnu sem pøidáš tøeba:
-    // public Dictionary<int, SolarBuilding> allSolars = ...
 
     private int nextId = 0;
 
@@ -22,29 +19,34 @@ public class BuildingsManager : MonoBehaviour
         Instance = this;
     }
 
-    // --- GENERICKÁ REGISTRACE ---
-    // Tuto metodu mùže volat Baterie, Solár, cokoliv co dìdí z BuildingBase
+    /// <summary>
+    /// Generically registers a new building into the management system, assigns it a unique ID, 
+    /// and stores it in the designated type-specific dictionary.
+    /// </summary>
+    /// <typeparam name="T">The specific type of the building.</typeparam>
+    /// <param name="building">The building instance to register.</param>
+    /// <param name="targetDictionary">The corresponding dictionary where the building will be stored.</param>
     public void RegisterBuilding<T>(T building, Dictionary<int, T> targetDictionary) where T : BuildingBase
     {
-        // 1. Pøidìlíme ID
         int newID = nextId++;
 
-        // 2. Zavoláme Setup na základní tøídì (BuildingBase)
         building.Setup(newID);
 
-        // 3. Uložíme do správného slovníku
         targetDictionary.Add(newID, building);
 
-        // 4. Logování
         if (PlayerScriptEngine.Instance != null)
         {
-            // GetDebugInfo() si každá budova definuje po svém
             string extra = building.GetDebugInfo();
             PlayerScriptEngine.Instance.LogSystemMessage($"New {building.BuildingName} connected. ID: {newID}. {extra}");
         }
     }
 
-    // --- GENERICKÉ ODHLÁŠENÍ ---
+    /// <summary>
+    /// Generically unregisters an existing building from the management system and removes it from its respective dictionary.
+    /// </summary>
+    /// <typeparam name="T">The specific type of the building.</typeparam>
+    /// <param name="building">The building instance to unregister.</param>
+    /// <param name="targetDictionary">The dictionary from which the building should be removed.</param>
     public void UnregisterBuilding<T>(T building, Dictionary<int, T> targetDictionary) where T : BuildingBase
     {
         if (targetDictionary.ContainsKey(building.id))

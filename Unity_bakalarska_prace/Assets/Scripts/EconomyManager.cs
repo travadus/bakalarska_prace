@@ -12,16 +12,12 @@ public class EconomyManager : MonoBehaviour
     [Header("Status")]
     [SerializeField] private float currentBalance;
 
-    // Current electricity price per MWh (updated from CSV)
     public float currentElectricityPricePerMWh = 0f;
 
-    // Transaction history
     [SerializeField] private List<MoneyTransaction> transactionHistory = new List<MoneyTransaction>();
 
-    // UI Event
     public event Action<float> OnBalanceChanged;
 
-    // Property shortcut
     public float Money => currentBalance;
 
     private void Awake()
@@ -38,8 +34,10 @@ public class EconomyManager : MonoBehaviour
     // --- MAIN METHODS ---
 
     /// <summary>
-    /// Adds money to the account (Income).
+    /// Adds a specified amount of money to the account balance.
     /// </summary>
+    /// <param name="amount">The amount to add. Must be greater than zero.</param>
+    /// <param name="description">A description of the income transaction.</param>
     public void AddMoney(float amount, string description = "Income")
     {
         if (amount <= 0)
@@ -54,17 +52,21 @@ public class EconomyManager : MonoBehaviour
     }
 
     /// <summary>
-    /// --- PØIDÁNO: ZJIŠTÌNÍ DOSTUPNOSTI PROSTØEDKÙ ---
-    /// Checks if the player can afford a certain cost without spending it yet.
+    /// Evaluates whether the account has sufficient funds to cover the specified cost.
     /// </summary>
+    /// <param name="amount">The cost to evaluate.</param>
+    /// <returns>True if the current balance is greater than or equal to the amount; otherwise, false.</returns>
     public bool CanAfford(float amount)
     {
         return currentBalance >= amount;
     }
 
     /// <summary>
-    /// Attempts to spend money. Returns true if successful, false if not enough money.
+    /// Attempts to deduct a specified amount from the account balance.
     /// </summary>
+    /// <param name="amount">The amount to deduct. Must be greater than zero.</param>
+    /// <param name="description">A description of the expense transaction.</param>
+    /// <returns>True if the transaction was successful; false if there were insufficient funds.</returns>
     public bool TrySpendMoney(float amount, string description)
     {
         if (amount <= 0) return false;
@@ -83,8 +85,10 @@ public class EconomyManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Forcefully subtracts money, even if balance goes negative (Penalties).
+    /// Forcefully deducts a specified amount from the account balance, allowing the balance to become negative.
     /// </summary>
+    /// <param name="amount">The amount to deduct. Must be greater than zero.</param>
+    /// <param name="description">A description of the penalty or expense transaction.</param>
     public void SubtractMoney(float amount, string description = "Penalty/Expense")
     {
         if (amount <= 0) return;
@@ -96,6 +100,11 @@ public class EconomyManager : MonoBehaviour
 
     // --- HELPER METHODS ---
 
+    /// <summary>
+    /// Creates a transaction record and adds it to the transaction history.
+    /// </summary>
+    /// <param name="amount">The transaction amount (positive for income, negative for expense).</param>
+    /// <param name="description">A description of the transaction.</param>
     private void LogTransaction(float amount, string description)
     {
         DateTime now = DateTime.MinValue;
@@ -111,16 +120,28 @@ public class EconomyManager : MonoBehaviour
 
     // --- GETTERS ---
 
+    /// <summary>
+    /// Retrieves the current account balance.
+    /// </summary>
+    /// <returns>The current balance as a float.</returns>
     public float GetBalance()
     {
         return currentBalance;
     }
 
+    /// <summary>
+    /// Retrieves the full history of financial transactions.
+    /// </summary>
+    /// <returns>A list of MoneyTransaction objects.</returns>
     public List<MoneyTransaction> GetHistory()
     {
         return transactionHistory;
     }
 
+    /// <summary>
+    /// Retrieves the current price of electricity per MWh.
+    /// </summary>
+    /// <returns>The electricity price as a float.</returns>
     public float GetCurrentElectricityPrice()
     {
         return currentElectricityPricePerMWh;

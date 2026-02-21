@@ -1,30 +1,26 @@
 using UnityEngine;
 
-// Dìdíme z BuildingBase (pro ID a jméno) a IGridActor (pro elektøinu)
+/// <summary>
+/// Represents a battery storage facility.
+/// </summary>
 public class BatteryBuilding : BuildingBase, IGridActor
 {
-    [Header("Nastavení (Edituj v Prefabu)")]
+    [Header("Settings")]
     public float maxStorageCapacity = 100f;
     public float maxInputOutput = 10f;
 
-    [Header("Stav (Mìní se ve høe)")]
-    // public int id;  <-- SMAZÁNO (Už je v BuildingBase)
+    [Header("State")]
     public float currentCharge = 0f;
     public BatteryMode currentMode = BatteryMode.Standby;
 
     private void Awake()
     {
-        // DÙLEŽITÉ: Nastavíme jméno, které použije Manager pøi výpisu
         BuildingName = "Battery";
 
         currentCharge = 0f;
         currentMode = BatteryMode.Standby;
     }
 
-    // public void Setup(int newID) <-- SMAZÁNO (Už je v BuildingBase)
-    // Pokud potøebuješ resetovat náboj, udìlej to v Awake nebo Start.
-
-    // Pøepíšeme metodu z BuildingBase, aby výpis v konzoli ukazoval kapacitu
     public override string GetDebugInfo()
     {
         return $"Capacity: {maxStorageCapacity} kWh, Charge: {currentCharge:F1}";
@@ -32,14 +28,11 @@ public class BatteryBuilding : BuildingBase, IGridActor
 
     private void Start()
     {
-        // 1. Registrace do Evidence (Genericky)
         if (BuildingsManager.Instance != null)
         {
-            // Tady øíkáme: "Zaregistruj mì (this) do slovníku allBatteries"
             BuildingsManager.Instance.RegisterBuilding(this, BuildingsManager.Instance.allBatteries);
         }
 
-        // 2. Registrace do Sítì (Elektøina)
         if (EnergySystem.Instance != null)
         {
             EnergySystem.Instance.RegisterActor(this);
@@ -48,15 +41,12 @@ public class BatteryBuilding : BuildingBase, IGridActor
 
     private void OnDestroy()
     {
-        // Odhlášení
         if (BuildingsManager.Instance != null)
             BuildingsManager.Instance.UnregisterBuilding(this, BuildingsManager.Instance.allBatteries);
 
         if (EnergySystem.Instance != null)
             EnergySystem.Instance.UnregisterActor(this);
     }
-
-    // --- IGridActor Implementace (Zùstává stejná) ---
 
     public float GetAvailableSupply()
     {
@@ -94,9 +84,9 @@ public class BatteryBuilding : BuildingBase, IGridActor
 
     protected override string GetTooltipContent()
     {
-        // Formátovaný string s barvièkama
         string status = currentMode.ToString();
         string color = "white";
+
         if (currentMode == BatteryMode.Charging) color = "green";
         if (currentMode == BatteryMode.Discharging) color = "red";
 

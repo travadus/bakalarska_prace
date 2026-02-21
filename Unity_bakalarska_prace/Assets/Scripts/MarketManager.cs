@@ -2,6 +2,10 @@ using UnityEngine;
 using System;
 using System.Collections.Generic;
 
+/// <summary>
+/// Manages market data by parsing external CSV files and synchronizing in-game electricity prices 
+/// with the global time system.
+/// </summary>
 public class MarketManager : MonoBehaviour, ITickable
 {
     public static MarketManager Instance { get; private set; }
@@ -9,12 +13,9 @@ public class MarketManager : MonoBehaviour, ITickable
     [Header("Data Source")]
     [SerializeField] private TextAsset csvFile;
 
-    // Data uložená v pamìti
     private List<EnergyDataEntry> allMarketData;
-
-    // Aktuálnì platná data
     private EnergyDataEntry currentData;
-    private int lastSearchIndex = 0; // Optimalizace pro hledání
+    private int lastSearchIndex = 0;
 
     private void Awake()
     {
@@ -30,11 +31,9 @@ public class MarketManager : MonoBehaviour, ITickable
     {
         if (TimeSystem.Instance != null)
         {
-            // ZMÌNA 1: Místo "OnTick +=" se zaregistrujeme do seznamu
             TimeSystem.Instance.RegisterTickable(this);
 
-            // ZMÌNA 2: Zavoláme OnTick manuálnì hned na zaèátku, 
-            // aby se cena naèetla okamžitì po spuštìní hry (neèekáme na první tik).
+            // Manually trigger the first tick to initialize market prices immediately upon startup.
             OnTick(TimeSystem.Instance.CurrentDateTime);
         }
     }
@@ -43,35 +42,35 @@ public class MarketManager : MonoBehaviour, ITickable
     {
         if (TimeSystem.Instance != null)
         {
-            // ZMÌNA 3: Slušnì se odhlásíme pøi znièení objektu
             TimeSystem.Instance.UnregisterTickable(this);
         }
     }
 
+    /// <summary>
+    /// Updates the current market data based on the provided game time.
+    /// Utilizes an optimized linear search by caching the last valid index.
+    /// </summary>
+    /// <param name="gameTime">The current date and time in the simulation.</param>
     public void OnTick(DateTime gameTime)
     {
         if (allMarketData == null || allMarketData.Count == 0) return;
 
-        // Optimalizované hledání: Pokraèujeme tam, kde jsme skonèili minule
         for (int i = lastSearchIndex; i < allMarketData.Count; i++)
         {
-            // Našli jsme pøesnou hodinu?
             if (IsSameHour(allMarketData[i].time, gameTime))
             {
                 currentData = allMarketData[i];
                 lastSearchIndex = i;
 
-                // --- TOTO ZDE CHYBÌLO: Pošleme cenu do EconomyManageru ---
                 if (EconomyManager.Instance != null)
                 {
                     EconomyManager.Instance.currentElectricityPricePerMWh = currentData.price;
                 }
-                // ---------------------------------------------------------
 
                 return;
             }
 
-            // Pokud jsme v datech "pøedbìhli" herní èas...
+            // Break early if the evaluated data entry is in the future.
             if (allMarketData[i].time > gameTime)
             {
                 break;
@@ -79,8 +78,11 @@ public class MarketManager : MonoBehaviour, ITickable
         }
     }
 
-    // --- Helpery a Public API ---
+    // --- HELPERS ---
 
+    /// <summary>
+    /// Evaluates whether two DateTime objects represent the exact same hour of the same day.
+    /// </summary>
     private bool IsSameHour(DateTime dt1, DateTime dt2)
     {
         return dt1.Year == dt2.Year &&
@@ -89,6 +91,10 @@ public class MarketManager : MonoBehaviour, ITickable
                dt1.Hour == dt2.Hour;
     }
 
+    /// <summary>
+    /// Retrieves the currently active market price for electricity.
+    /// </summary>
+    /// <returns>The current price per MWh as a float.</returns>
     public float GetCurrentPrice()
     {
         return currentData.price;

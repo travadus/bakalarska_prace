@@ -1,6 +1,10 @@
 using UnityEngine;
+using UnityEngine.UI;
 using TMPro;
 
+/// <summary>
+/// UI that shows money balance.
+/// </summary>
 public class MoneyDisplayUI : MonoBehaviour
 {
     [SerializeField] private TextMeshProUGUI moneyText;
@@ -11,7 +15,6 @@ public class MoneyDisplayUI : MonoBehaviour
         {
             EconomyManager.Instance.OnBalanceChanged += UpdateMoneyText;
 
-            // První update ruènì
             UpdateMoneyText(EconomyManager.Instance.GetBalance());
         }
     }
@@ -24,13 +27,17 @@ public class MoneyDisplayUI : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Updates the money text.
+    /// </summary>
+    /// <param name="currentBalance">The new balance value.</param>
     private void UpdateMoneyText(float currentBalance)
     {
-        // "N0" formátuje èíslo s mezerami (napø. 1 000 000)
         moneyText.text = $"{currentBalance:N0} €";
 
-        // Èervená barva, pokud jsme v dluhu (pokud to hra dovolí)
-        if (currentBalance < 0) moneyText.color = Color.red;
-        else moneyText.color = Color.white;
+        if (currentBalance < 0)
+            moneyText.color = Color.red;
+        else
+            moneyText.color = Color.white;
     }
 }

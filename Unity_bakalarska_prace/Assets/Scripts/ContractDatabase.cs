@@ -2,18 +2,19 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Central database holding all available contract configurations.
+/// A central static repository containing all predefined contract configurations.
 /// </summary>
 public static class ContractDatabase
 {
-    // Constants for keys to avoid typos and magic strings
     public const string KeyHospital = "Hospital";
     public const string KeyDataCenter = "Data Center";
     public const string KeyHeavyIndustry = "Heavy Industry";
     public const string KeyLightIndustry = "Light Industry";
     public const string KeyCity = "City";
 
-    // Dictionary linking the contract key to its full configuration
+    /// <summary>
+    /// A read-only collection mapping unique contract keys to their respective configurations.
+    /// </summary>
     public static readonly Dictionary<string, ContractConfig> Configs = new Dictionary<string, ContractConfig>
     {
         {
@@ -39,8 +40,10 @@ public static class ContractDatabase
     };
 
     /// <summary>
-    /// Safely retrieves a contract configuration by its key.
+    /// Retrieves a specific contract configuration based on the provided key.
     /// </summary>
+    /// <param name="typeKey">The unique identifier of the contract type.</param>
+    /// <returns>The corresponding ContractConfig, or a default fallback if the key is not found.</returns>
     public static ContractConfig GetConfig(string typeKey)
     {
         if (Configs.TryGetValue(typeKey, out ContractConfig config))
@@ -48,7 +51,7 @@ public static class ContractDatabase
             return config;
         }
 
-        // Fallback to prevent null reference errors during runtime
+        // Returns a default fallback configuration to prevent null reference exceptions.
         return new ContractConfig("Unknown", ContractCycle.Daily, 0, 24, "Standard contract.");
     }
 }

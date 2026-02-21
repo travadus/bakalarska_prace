@@ -3,7 +3,7 @@ using UnityEngine;
 using System.Linq;
 
 /// <summary>
-/// Core production system managing generation, tracking, and evaluation of all energy contracts.
+/// Core production system managing the generation, tracking, and evaluation of all energy contracts.
 /// Dynamically scales quotas and rewards based on the player's current infrastructure.
 /// </summary>
 public class ContractsManager : MonoBehaviour
@@ -13,7 +13,6 @@ public class ContractsManager : MonoBehaviour
     public List<Contract> allContracts = new List<Contract>();
     private int contractCounter = 1;
 
-    // Time tracking variables
     private int lastProcessedHour = -1;
     private int lastProcessedDay = -1;
 
@@ -41,14 +40,12 @@ public class ContractsManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Clears unaccepted contracts and generates new ones to fill the market.
+    /// Clears unaccepted or finalized contracts and generates new ones to restock the market.
     /// </summary>
     private void RefreshMarket()
     {
-        // Remove old available contracts and finished ones
         allContracts.RemoveAll(c => c.status == ContractStatus.Available || c.status == ContractStatus.Completed || c.status == ContractStatus.Failed);
 
-        // Always provide 3 fresh contracts
         GenerateScaledContract();
         GenerateScaledContract();
         GenerateScaledContract();
@@ -60,18 +57,15 @@ public class ContractsManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Calculates theoretical player capacity to scale contract difficulty dynamically.
+    /// Calculates the theoretical daily energy capacity of the player to scale contract difficulty appropriately.
     /// </summary>
+    /// <returns>The estimated daily capacity in MWh.</returns>
     private float CalculatePlayerDailyCapacity()
     {
-        // Using GameAPI safely to avoid missing references
         int solarCount = GameAPI.GetSolarCount();
         int batteryCount = GameAPI.GetBatteryCount();
 
-        // Baseline capacity for absolute beginners (e.g., 0 buildings)
         float baselineCapacity = 20f;
-
-        // Approximated values: Assume 1 solar generates ~10 MWh/day, 1 battery provides ~5 MWh flexibility
         float estimatedSolarCapacity = solarCount * 10f;
         float estimatedBatteryCapacity = batteryCount * 5f;
 
@@ -79,7 +73,8 @@ public class ContractsManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Generates a contract mathematically balanced around the player's current progression.
+    /// Generates a new contract with quotas, durations, and financial parameters mathematically balanced 
+    /// against the player's current energy production capacity.
     /// </summary>
     private void GenerateScaledContract()
     {
@@ -87,11 +82,11 @@ public class ContractsManager : MonoBehaviour
         string randomKey = keys[Random.Range(0, keys.Count)];
         ContractConfig config = ContractDatabase.GetConfig(randomKey);
 
-        // 1. Determine base capacity (60% to 150% of what player can currently handle)
+        // 1. Determine base capacity target (60% to 150% of current player capability)
         float playerDailyCapacity = CalculatePlayerDailyCapacity();
         float targetDailyMWh = playerDailyCapacity * Random.Range(0.6f, 1.5f);
 
-        // 2. Roll for Tier (Loot Table Logic)
+        // 2. Determine contract tier and duration based on probability
         string selectedTier = "Standard";
         float rewardMultiplier = 1.0f;
         int durationDays = Random.Range(7, 31);
@@ -109,7 +104,7 @@ public class ContractsManager : MonoBehaviour
             rewardMultiplier = 1.5f;
         }
 
-        // 3. Create the contract
+        // 3. Instantiate the contract object
         Contract newContract = new Contract
         {
             id = contractCounter++,
@@ -121,36 +116,38 @@ public class ContractsManager : MonoBehaviour
             cycleType = config.Cycle
         };
 
-        // 4. Mathematical Quota & Penalty Calculation
+        // 4. Calculate cycle targets and apply minimum safeguards
         if (config.Cycle == ContractCycle.Daily)
         {
             newContract.targetMWhPerCycle = Mathf.Round(targetDailyMWh);
         }
-        else // Hourly
+        else
         {
-            // Spread the daily target across 24 hours
             newContract.targetMWhPerCycle = Mathf.Round((targetDailyMWh / 24f) * 10f) / 10f;
-            if (newContract.targetMWhPerCycle < 0.5f) newContract.targetMWhPerCycle = 0.5f; // Minimum safeguard
+            if (newContract.targetMWhPerCycle < 0.5f) newContract.targetMWhPerCycle = 0.5f;
         }
 
-        // 5. Economy Scaling
+        // 5. Scale economic parameters based on total expected revenue
         newContract.rewardPerMWh = Mathf.RoundToInt(Random.Range(15f, 35f) * rewardMultiplier);
 
-        // Calculate theoretical total revenue to balance bonuses and penalties
         float cyclesPerDay = config.Cycle == ContractCycle.Hourly ? 24f : 1f;
         float expectedTotalRevenue = newContract.targetMWhPerCycle * cyclesPerDay * newContract.rewardPerMWh * durationDays;
 
-        // Bonus is ~10-20% of total contract value. Penalty is ~30-50% of total value.
+        // Financial balancing: Bonus is ~10-20% and failure penalty is ~30-50% of the total expected contract value.
         newContract.completionBonus = Mathf.RoundToInt((expectedTotalRevenue * Random.Range(0.1f, 0.2f)) / 100f) * 100f;
         newContract.failPenalty = Mathf.RoundToInt((expectedTotalRevenue * Random.Range(0.3f, 0.5f)) / 100f) * 100f;
 
-        // Missed step penalty is roughly 2x the value of the energy they failed to deliver
+        // Missed step penalty is balanced as roughly 2x the value of the undelivered energy.
         newContract.missedStepPenalty = Mathf.RoundToInt(newContract.targetMWhPerCycle * newContract.rewardPerMWh * 2f);
 
         newContract.daysRemaining = newContract.durationDays;
         allContracts.Add(newContract);
     }
 
+    /// <summary>
+    /// Activates a specific contract from the available market pool.
+    /// </summary>
+    /// <param name="id">The unique identifier of the contract to accept.</param>
     public void AcceptContract(int id)
     {
         Contract c = allContracts.Find(x => x.id == id);
@@ -164,6 +161,10 @@ public class ContractsManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Processes active contracts at every time tick, evaluating operating hours and daily cycles.
+    /// </summary>
+    /// <param name="time">The current in-game date and time.</param>
     private void ProcessContractsTick(System.DateTime time)
     {
         if (lastProcessedHour == -1)
@@ -230,6 +231,11 @@ public class ContractsManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Evaluates a single contract cycle to determine if quotas were met, applying penalties for failures.
+    /// </summary>
+    /// <param name="c">The contract to evaluate.</param>
+    /// <param name="uiNeedsRefresh">Reference flag indicating if the UI requires updating.</param>
     private void EvaluateCycle(Contract c, ref bool uiNeedsRefresh)
     {
         if (c.deliveredInCurrentCycle >= c.targetMWhPerCycle)

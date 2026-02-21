@@ -1,19 +1,22 @@
 using UnityEngine;
 using System.Collections.Generic;
 
+/// <summary>
+/// Core simulation engine handling the physical flow of energy across the grid.
+/// Manages power generation, distribution, market interactions, and grid loss calculations.
+/// </summary>
 public class EnergySystem : MonoBehaviour
 {
     public static EnergySystem Instance;
 
-    // --- STAV SÍTÌ ---
+    // --- GRID STATUS ---
     public float PowerBusLevel { get; private set; }
     public float WastedEnergy { get; private set; }
 
-    // PØÍKAZY Z GAME API
-    public float PlannedImport { get; set; } // Hráè chce koupit (BuyEnergy)
-    public float PlannedExport { get; set; } // Hráè chce prodat (SellEnergy) - NOVÉ
+    // --- API COMMANDS ---
+    public float PlannedImport { get; set; }
+    public float PlannedExport { get; set; }
 
-    // Seznam úèastníkù
     private List<IGridActor> gridActors = new List<IGridActor>();
 
     private void Awake()
@@ -37,34 +40,34 @@ public class EnergySystem : MonoBehaviour
         if (gridActors.Contains(actor)) gridActors.Remove(actor);
     }
 
-    // --- HLAVNÍ SMYÈKA ---
+    // --- MAIN SIMULATION LOOP ---
+
+    /// <summary>
+    /// Executes the primary energy flow simulation sequentially: Generation -> Export -> Distribution -> Waste.
+    /// </summary>
+    /// <param name="time">The current in-game date and time.</param>
     private void SimulateEnergyFlow(System.DateTime time)
     {
-        // 1. PØÍTOK (Import + Baterie Out + Soláry)
         CollectSupplies();
-
-        // 2. EXPORT (Prodej na burzu) - TOTO JE NUTNÉ PRO FIX
         ProcessExport();
-
-        // 3. ODBÌR (Baterie In + Mìsto)
         DistributeDemand();
-
-        // 4. ZTRÁTY (Co zbylo)
         CalculateWaste();
     }
 
-    // --- POMOCNÉ METODY ---
+    // --- CORE FLOW METHODS ---
 
+    /// <summary>
+    /// Gathers energy from explicit market imports and all registered producing actors.
+    /// </summary>
     private void CollectSupplies()
     {
-        // A) Import z burzy - TADY HLÁSÍME PØÍCHOD
+        // 1. Process external market imports first
         if (PlannedImport > 0)
         {
             PowerBusLevel = PlannedImport;
 
             if (PlayerScriptEngine.Instance != null)
             {
-                // Tady se energie fyzicky objevila v síti -> ZELENÁ HLÁŠKA
                 PlayerScriptEngine.Instance.LogMessage($"GRID INPUT: +{PlannedImport} MWh arrived from Import.", Color.green);
             }
 
@@ -72,11 +75,10 @@ public class EnergySystem : MonoBehaviour
         }
         else
         {
-            // Pokud nebyl import, zaèínáme na nule (nebo pøièítáme k zùstatku, záleží na logice, obvykle reset)
             PowerBusLevel = 0f;
         }
 
-        // B) Zdroje ve høe (Baterie, Soláry...)
+        // 2. Extract available energy from local grid sources (e.g., Solar, Batteries)
         foreach (var actor in gridActors)
         {
             float supply = actor.GetAvailableSupply();
@@ -88,6 +90,10 @@ public class EnergySystem : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Fulfills planned market exports if sufficient energy is available on the bus.
+    /// Handles revenue generation and dumping penalties for negative market prices.
+    /// </summary>
     private void ProcessExport()
     {
         if (PlannedExport > 0)
@@ -107,7 +113,6 @@ public class EnergySystem : MonoBehaviour
                     {
                         EconomyManager.Instance.AddMoney(totalRevenue, "Export Revenue");
 
-                        // TADY HLÁSÍME PRODEJ (To je to, co jsi chtìl vidìt)
                         if (PlayerScriptEngine.Instance != null)
                             PlayerScriptEngine.Instance.LogMessage($"SOLD: {amountToSell:F1} MWh for {totalRevenue:F2} €", Color.green);
                     }
@@ -121,16 +126,15 @@ public class EnergySystem : MonoBehaviour
                     }
                 }
             }
-            // Volitelnì: Hláška, že prodej selhal (nemìli jsme energii)
-            else if (PowerBusLevel <= 0.01f && PlayerScriptEngine.Instance != null)
-            {
-                // PlayerScriptEngine.Instance.LogMessage("EXPORT FAILED: Grid is empty.", Color.gray);
-            }
 
             PlannedExport = 0f;
         }
     }
 
+    /// <summary>
+    /// Distributes available energy to registered consuming actors.
+    /// Initiates a brownout sequence if total demand exceeds available supply.
+    /// </summary>
     private void DistributeDemand()
     {
         foreach (var actor in gridActors)
@@ -145,7 +149,7 @@ public class EnergySystem : MonoBehaviour
                 }
                 else
                 {
-                    // Brownout (nedostatek energie)
+                    // Brownout scenario: The actor receives only the remaining fraction of power, and the grid is depleted.
                     actor.ReceiveEnergy(PowerBusLevel);
                     PowerBusLevel = 0f;
                     break;
@@ -154,18 +158,23 @@ public class EnergySystem : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Calculates energy dissipation for surplus power remaining on the grid.
+    /// </summary>
     private void CalculateWaste()
     {
         if (PowerBusLevel > 0)
         {
             float surplus = PowerBusLevel;
-            // Logaritmická køivka ztrát
+
+            // Applies a rational decay curve to simulate physical grid resistance, 
+            // where higher loads yield progressively higher dissipation losses.
             float keptEnergy = surplus / (1.0f + (surplus / 50.0f));
 
             WastedEnergy = surplus - keptEnergy;
             PowerBusLevel = keptEnergy;
 
-            // Logování jen pøi vìtších ztrátách (nad 0.1 MWh)
+            // Threshold log to prevent console spam for minor dissipation
             if (WastedEnergy > 0.1f && PlayerScriptEngine.Instance != null)
             {
                 PlayerScriptEngine.Instance.LogSystemMessage($"GRID OVERLOAD: {WastedEnergy:F1} MWh wasted!");
@@ -178,6 +187,9 @@ public class EnergySystem : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Safely deducts a specific amount of energy from the power bus if available.
+    /// </summary>
     public void ConsumeEnergyFromBus(float amount)
     {
         if (amount > 0 && PowerBusLevel >= amount)

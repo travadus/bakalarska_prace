@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
+/// <summary>
+/// Core system managing grid-based object placement.
+/// </summary>
 public class GridBuildingSystem : MonoBehaviour
 {
     public static GridBuildingSystem Instance { get; private set; }
@@ -11,9 +14,14 @@ public class GridBuildingSystem : MonoBehaviour
     private PlacedObjectTypeSO placedObjectTypeSO;
     private GridXZ<GridObject> grid;
 
+    /// <summary>
+    /// Invoked when the currently selected building type changes or is deselected.
+    /// </summary>
     public event EventHandler OnSelectedChanged;
 
-    // Event po položení
+    /// <summary>
+    /// Invoked successfully upon the physical placement of a new object on the grid.
+    /// </summary>
     public event EventHandler OnObjectPlaced;
 
     private void Awake()
@@ -28,6 +36,9 @@ public class GridBuildingSystem : MonoBehaviour
         placedObjectTypeSO = null;
     }
 
+    /// <summary>
+    /// Represents a single cell within the construction grid.
+    /// </summary>
     public class GridObject
     {
         private GridXZ<GridObject> grid;
@@ -38,7 +49,7 @@ public class GridBuildingSystem : MonoBehaviour
         public GridObject(GridXZ<GridObject> grid, int x, int z)
         {
             this.grid = grid;
-            this.x = x; 
+            this.x = x;
             this.z = z;
         }
 
@@ -65,25 +76,24 @@ public class GridBuildingSystem : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Processes player input for deselecting objects or initiating the construction sequence.
+    /// </summary>
     private void Update()
     {
-        // 1. Deselect with ESC
         if (Input.GetKeyDown(KeyCode.Escape))
         {
             DeselectObjectType();
             return;
         }
 
-        // 2. If nothing selected, do nothing
         if (placedObjectTypeSO == null)
         {
             return;
         }
 
-        // 3. Building Logic
         if (Input.GetMouseButtonDown(0))
         {
-            // Check UI click
             if (EventSystem.current.IsPointerOverGameObject())
                 return;
 
@@ -92,7 +102,6 @@ public class GridBuildingSystem : MonoBehaviour
 
             grid.GetXZ(mouseWorldPosition, out int x, out int z);
 
-            // Check grid bounds
             if (x < 0 || z < 0 || x >= grid.GetWidth() || z >= grid.GetHeight())
             {
                 return;
@@ -102,33 +111,23 @@ public class GridBuildingSystem : MonoBehaviour
 
             if (gridObject.CanBuild())
             {
-                // --- NEW: ECONOMY CHECK START ---
-
-                // 1. Check if we have an EconomyManager instance
                 if (EconomyManager.Instance == null)
                 {
                     Debug.LogError("EconomyManager is missing in the scene!");
                     return;
                 }
 
-                // 2. Check if player can afford the building cost defined in ScriptableObject
-                // (Make sure you added 'public float constructionCost;' to PlacedObjectTypeSO)
                 float cost = placedObjectTypeSO.constructionCost;
 
                 if (EconomyManager.Instance.CanAfford(cost))
                 {
-                    // 3. DEDUCT MONEY
-                    // Using "Construction" as the category/reason for the log
                     EconomyManager.Instance.TrySpendMoney(cost, $"Construction: {placedObjectTypeSO.nameString}");
 
-                    // 4. BUILD (Original logic)
                     Transform buildTransform = Instantiate(placedObjectTypeSO.prefab, grid.GetWorldPosition(x, z), Quaternion.identity);
                     gridObject.SetTransform(buildTransform);
 
-                    // 5. Fire Events
                     OnObjectPlaced?.Invoke(this, EventArgs.Empty);
 
-                    // Optional: Visual/Audio feedback for spending money
                     if (PlayerScriptEngine.Instance != null)
                     {
                         PlayerScriptEngine.Instance.LogSystemMessage($"Built {placedObjectTypeSO.nameString} for {cost} €.");
@@ -136,7 +135,6 @@ public class GridBuildingSystem : MonoBehaviour
                 }
                 else
                 {
-                    // PLAYER IS BROKE
                     if (PlayerScriptEngine.Instance != null)
                     {
                         PlayerScriptEngine.Instance.LogMessage($"Insufficient funds! Required: {cost} €", Color.red);
@@ -146,7 +144,6 @@ public class GridBuildingSystem : MonoBehaviour
                         Debug.Log("Not enough money!");
                     }
                 }
-                // --- ECONOMY CHECK END ---
             }
             else
             {
@@ -155,12 +152,19 @@ public class GridBuildingSystem : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Sets the active building type for placement.
+    /// </summary>
+    /// <param name="placedObjectTypeSO">The ScriptableObject defining the building to be placed.</param>
     public void SelectObjectType(PlacedObjectTypeSO placedObjectTypeSO)
     {
         this.placedObjectTypeSO = placedObjectTypeSO;
         RefreshSelectedObjectType();
     }
 
+    /// <summary>
+    /// Clears the currently selected building type, aborting placement mode.
+    /// </summary>
     public void DeselectObjectType()
     {
         placedObjectTypeSO = null;
@@ -172,6 +176,10 @@ public class GridBuildingSystem : MonoBehaviour
         OnSelectedChanged?.Invoke(this, EventArgs.Empty);
     }
 
+    /// <summary>
+    /// Calculates the world position snapped to the nearest grid cell based on current mouse coordinates.
+    /// </summary>
+    /// <returns>The snapped Vector3 position, or raw mouse position if no object is selected.</returns>
     public Vector3 GetMouseWorldSnappedPosition()
     {
         Vector3 mousePosition = Mouse3D.GetMouseWorldPosition();
@@ -191,5 +199,4 @@ public class GridBuildingSystem : MonoBehaviour
     {
         return placedObjectTypeSO;
     }
-
 }

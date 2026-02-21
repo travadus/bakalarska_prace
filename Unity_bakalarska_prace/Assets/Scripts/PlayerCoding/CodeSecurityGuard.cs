@@ -4,11 +4,13 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using UnityEngine;
 
+/// <summary>
+/// A syntax analyzer that performs code validation.
+/// </summary>
 public class CodeSecurityGuard : CSharpSyntaxWalker
 {
     public List<string> FoundErrors { get; private set; } = new List<string>();
 
-    // Cache reference to manager to avoid calling Instance repeatedly
     private ResearchManager _researchManager;
 
     public CodeSecurityGuard()
@@ -16,10 +18,13 @@ public class CodeSecurityGuard : CSharpSyntaxWalker
         _researchManager = ResearchManager.Instance;
     }
 
-    // --- 1. VARIABLES ---
+    // --- SYNTAX NODE VISITORS ---
+
+    /// <summary>
+    /// Validates variable declarations against the research requirement.
+    /// </summary>
     public override void VisitVariableDeclaration(VariableDeclarationSyntax node)
     {
-        // Check if "tech_variables" is unlocked
         if (!IsUnlocked("tech_variables"))
         {
             AddError(node, "Variables are locked! Research 'Variable Storage'.");
@@ -27,10 +32,11 @@ public class CodeSecurityGuard : CSharpSyntaxWalker
         base.VisitVariableDeclaration(node);
     }
 
-    // --- 2. OPERATORS (+, -, *, /, %) ---
+    /// <summary>
+    /// Checks arithmetic operations against the research requirement.
+    /// </summary>
     public override void VisitBinaryExpression(BinaryExpressionSyntax node)
     {
-        // We only care about arithmetic operators for now
         if (node.IsKind(SyntaxKind.AddExpression) ||
             node.IsKind(SyntaxKind.SubtractExpression) ||
             node.IsKind(SyntaxKind.MultiplyExpression) ||
@@ -45,7 +51,9 @@ public class CodeSecurityGuard : CSharpSyntaxWalker
         base.VisitBinaryExpression(node);
     }
 
-    // --- 3. IF / ELSE ---
+    /// <summary>
+    /// Validates conditional branching against the research requirement.
+    /// </summary>
     public override void VisitIfStatement(IfStatementSyntax node)
     {
         if (!IsUnlocked("tech_conditions"))
@@ -55,7 +63,9 @@ public class CodeSecurityGuard : CSharpSyntaxWalker
         base.VisitIfStatement(node);
     }
 
-    // --- 4. SWITCH ---
+    /// <summary>
+    /// Validates switch statements against the research requirement.
+    /// </summary>
     public override void VisitSwitchStatement(SwitchStatementSyntax node)
     {
         if (!IsUnlocked("tech_switch"))
@@ -65,7 +75,9 @@ public class CodeSecurityGuard : CSharpSyntaxWalker
         base.VisitSwitchStatement(node);
     }
 
-    // --- 5. WHILE LOOPS ---
+    /// <summary>
+    /// Validates while loops against the research requirement.
+    /// </summary>
     public override void VisitWhileStatement(WhileStatementSyntax node)
     {
         if (!IsUnlocked("tech_loops"))
@@ -75,19 +87,25 @@ public class CodeSecurityGuard : CSharpSyntaxWalker
         base.VisitWhileStatement(node);
     }
 
-    // Also block For/Do loops if they fall under the same category
+    /// <summary>
+    /// Validates for loops against the research requirement.
+    /// </summary>
     public override void VisitForStatement(ForStatementSyntax node)
     {
-        if (!IsUnlocked("tech_loops")) AddError(node, "For loops are locked! Research 'Looping Structures'.");
+        if (!IsUnlocked("tech_loops"))
+        {
+            AddError(node, "For loops are locked! Research 'Looping Structures'.");
+        }
         base.VisitForStatement(node);
     }
 
-    // --- 6. RANDOM ---
+    /// <summary>
+    /// Monitors method searching for Random-related calls to enforce research restrictions.
+    /// </summary>
     public override void VisitInvocationExpression(InvocationExpressionSyntax node)
     {
         string calledMethod = node.Expression.ToString();
 
-        // Check for Random.Range, System.Random, etc.
         if (calledMethod.Contains("Random") || calledMethod.Contains("UnityEngine.Random") || calledMethod.Contains("System.Random"))
         {
             if (!IsUnlocked("tech_random"))
@@ -99,7 +117,9 @@ public class CodeSecurityGuard : CSharpSyntaxWalker
         base.VisitInvocationExpression(node);
     }
 
-    // --- 7. ARRAYS ---
+    /// <summary>
+    /// Validates array declarations against the research requirement.
+    /// </summary>
     public override void VisitArrayType(ArrayTypeSyntax node)
     {
         if (!IsUnlocked("tech_arrays"))
@@ -109,10 +129,11 @@ public class CodeSecurityGuard : CSharpSyntaxWalker
         base.VisitArrayType(node);
     }
 
-    // --- 8. LISTS ---
+    /// <summary>
+    /// Checks for List usage against the research requirement.
+    /// </summary>
     public override void VisitGenericName(GenericNameSyntax node)
     {
-        // Checks for List<T>
         if (node.Identifier.Text == "List")
         {
             if (!IsUnlocked("tech_lists"))
@@ -123,42 +144,44 @@ public class CodeSecurityGuard : CSharpSyntaxWalker
         base.VisitGenericName(node);
     }
 
-    // --- 9. USER-DEFINED METHODS ---
+    /// <summary>
+    /// Validates custom method definitions.
+    /// </summary>
     public override void VisitMethodDeclaration(MethodDeclarationSyntax node)
     {
         string methodName = node.Identifier.Text;
 
-        // The entry point 'Main' is always allowed, as it is required for script execution.
-        // We must still traverse its body to validate the code inside.
         if (methodName == "Main")
         {
             base.VisitMethodDeclaration(node);
             return;
         }
 
-        // Any method other than 'Main' is considered a custom user-defined function.
-        // This capability is restricted until the specific technology is researched.
         if (!IsUnlocked("tech_methods"))
         {
             AddError(node, $"Defining custom method '{methodName}' is restricted. Research 'Modular Programming' to unlock function definitions.");
             return;
         }
 
-        // If the technology is unlocked, proceed with standard validation of the method body.
         base.VisitMethodDeclaration(node);
     }
 
-    // --- Helper Methods ---
+    // --- HELPER METHODS ---
 
+    /// <summary>
+    /// Checks if a specific technology is unlocked via the Research Manager.
+    /// </summary>
     private bool IsUnlocked(string techID)
     {
-        if (_researchManager == null) return false; // Default to locked if manager missing
+        if (_researchManager == null) return false;
         return _researchManager.IsTechUnlocked(techID);
     }
 
+    /// <summary>
+    /// Appends an error message including the line number to the error list.
+    /// </summary>
     private void AddError(SyntaxNode node, string message)
     {
-        // Calculate line number (0-based -> 1-based)
         int line = node.GetLocation().GetLineSpan().StartLinePosition.Line + 1;
         FoundErrors.Add($"Line {line}: {message}");
     }

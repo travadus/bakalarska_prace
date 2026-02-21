@@ -1,50 +1,54 @@
 ﻿using UnityEngine;
 
-// Abstract base class for all buildings in the game
+/// <summary>
+/// Abstract base class defining the core identity and shared functionality for all placeable structures.
+/// </summary>
 public abstract class BuildingBase : MonoBehaviour
 {
-    public int id { get; private set; } = -1; // -1 means not assigned yet
-    public string BuildingName; // E.g., "Battery", "Solar Panel"
+    public int id { get; private set; } = -1;
+    public string BuildingName;
 
-    // Called by BuildingsManager when registering the building
+    /// <summary>
+    /// Initializes the building with a unique identifier and updates its hierarchy representation.
+    /// </summary>
+    /// <param name="newID">The unique integer ID assigned by the building management system.</param>
     public void Setup(int newID)
     {
         this.id = newID;
-        // Rename gameObject in Hierarchy for better organization
         gameObject.name = $"{BuildingName}_{newID}";
     }
 
-    // --- Virtual Methods (Children can override these) ---
-
     /// <summary>
-    /// Returns debug information for the console logs.
+    /// Retrieves internal state data for debugging purposes.
     /// </summary>
+    /// <returns>A formatted string containing debug information.</returns>
     public virtual string GetDebugInfo()
     {
-        return ""; // Default: No extra info
+        return "";
     }
 
     /// <summary>
-    /// Returns the category/type of the building (Used in UI).
+    /// Retrieves the category or type name of the building for UI representation.
     /// </summary>
+    /// <returns>The building type as a string.</returns>
     public virtual string GetBuildingType()
     {
         return "Unknown Building";
     }
 
     /// <summary>
-    /// Returns the current status description (e.g., "Charging", "Paused").
+    /// Retrieves the current operational status of the building.
     /// </summary>
+    /// <returns>The status description as a string.</returns>
     public virtual string GetStatusText()
     {
         return "Active";
     }
 
+    // --- TOOLTIP INTERACTIONS ---
+
     private void OnMouseEnter()
     {
-        // Zabráníme zobrazení, pokud zrovna stavíme nebo je otevřené menu
-        // if (EventSystem.current.IsPointerOverGameObject()) return; 
-
         TooltipSystem.Instance.Show(GetTooltipContent(), GetTooltipHeader());
     }
 
@@ -53,21 +57,29 @@ public abstract class BuildingBase : MonoBehaviour
         TooltipSystem.Instance.Hide();
     }
 
-    // Když myš zůstává na objektu, aktualizujeme text (aby se měnila čísla energie)
+    /// <summary>
+    /// Continuously updates the tooltip content to reflect real-time value changes while the cursor remains on the object.
+    /// </summary>
     private void OnMouseOver()
     {
-        // Jen pokud je tooltip aktivní, aktualizujeme text
         TooltipSystem.Instance.Show(GetTooltipContent(), GetTooltipHeader());
     }
 
-    // --- Virtuální metody pro přepsání v potomcích ---
+    /// <summary>
+    /// Defines the header text displayed within the building's tooltip.
+    /// </summary>
+    /// <returns>The tooltip header string.</returns>
     protected virtual string GetTooltipHeader()
     {
-        return GetBuildingType(); // Defaultně vrátí typ budovy
+        return GetBuildingType();
     }
 
+    /// <summary>
+    /// Defines the body content displayed within the building's tooltip.
+    /// </summary>
+    /// <returns>The tooltip body string.</returns>
     protected virtual string GetTooltipContent()
     {
-        return GetStatusText(); // Defaultně vrátí status
+        return GetStatusText();
     }
 }

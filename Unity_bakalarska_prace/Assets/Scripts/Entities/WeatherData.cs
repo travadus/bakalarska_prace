@@ -1,7 +1,12 @@
-[System.Serializable]
+using System;
+
+/// <summary>
+/// A data structure representing weather data.
+/// </summary>
+[Serializable]
 public struct WeatherData
 {
-    public float SunIntensity;  // Výsledné slunce (po odeètení mrakù)
-    public float WindIntensity; // Síla vìtru
-    public float CloudDensity;  // Hustota mrakù (0 = jasno, 1 = zataženo)
+    public float SunIntensity;
+    public float WindIntensity;
+    public float CloudDensity;
 }

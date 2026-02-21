@@ -1,6 +1,9 @@
 using UnityEngine;
 using System;
 
+/// <summary>
+/// Represents a research facility that converts financial resources into Research Points (RP) over time.
+/// </summary>
 public class ResearchLab : BuildingBase
 {
     [Header("Research Settings")]
@@ -9,19 +12,15 @@ public class ResearchLab : BuildingBase
 
     private int lastProcessedHour = -1;
 
-    // Renamed from 'isActive' to 'isOperating' to match GameAPI requirements
     public bool isOperating = true;
 
     private void Start()
     {
-        // 1. Register to TimeSystem for game ticks
         if (TimeSystem.Instance != null)
         {
             TimeSystem.Instance.OnTick += HandleTick;
         }
 
-        // 2. Register to BuildingsManager
-        // IMPORTANT: Ensure 'allResearchLabs' exists in BuildingsManager.cs as a public Dictionary
         if (BuildingsManager.Instance != null)
         {
             BuildingsManager.Instance.RegisterBuilding(this, BuildingsManager.Instance.allResearchLabs);
@@ -30,13 +29,11 @@ public class ResearchLab : BuildingBase
 
     private void OnDestroy()
     {
-        // 1. Unregister from TimeSystem
         if (TimeSystem.Instance != null)
         {
             TimeSystem.Instance.OnTick -= HandleTick;
         }
 
-        // 2. Unregister from BuildingsManager
         if (BuildingsManager.Instance != null)
         {
             BuildingsManager.Instance.UnregisterBuilding(this, BuildingsManager.Instance.allResearchLabs);
@@ -44,34 +41,28 @@ public class ResearchLab : BuildingBase
     }
 
     /// <summary>
-    /// Called every in-game hour.
-    /// Consumes money and generates Research Points.
+    /// Processes the facility's operations upon receiving a global time tick.
+    /// Evaluates the transition to a new in-game hour, processes funding deductions, 
+    /// grants research points, and automatically halts operations if funds are insufficient.
     /// </summary>
+    /// <param name="time">The current game time.</param>
     private void HandleTick(DateTime time)
     {
-        // 1. Pokud je lab vypnutá, nedìlej nic
         if (!isOperating) return;
 
-        // 2. KONTROLA: Probìhla už v této herní hodinì platba?
-        // Tato podmínka se splní jen tehdy, když se v herním èase zmìní hodina (napø. z 8:50 na 9:00)
         if (time.Hour != lastProcessedHour)
         {
             if (EconomyManager.Instance != null && ResearchManager.Instance != null)
             {
-                // Zaplatíme za provoz na celou hodinu dopøedu
                 bool paid = EconomyManager.Instance.TrySpendMoney(moneyCostPerTick, $"Research Lab {id} Funding");
 
                 if (paid)
                 {
-                    // Uložíme si aktuální hodinu, aby se v dalším tiku (za 10 min) akce neopakovala
                     lastProcessedHour = time.Hour;
-
-                    // Pøidáme RP za hodinu provozu
                     ResearchManager.Instance.AddRP(rpGainPerTick);
                 }
                 else
                 {
-                    // Pokud nemáme peníze, vypneme lab
                     isOperating = false;
 
                     if (PlayerScriptEngine.Instance != null)
@@ -82,8 +73,6 @@ public class ResearchLab : BuildingBase
             }
         }
     }
-
-    // --- BuildingBase Overrides ---
 
     public override string GetBuildingType()
     {
@@ -103,7 +92,7 @@ public class ResearchLab : BuildingBase
 
     protected override string GetTooltipHeader()
     {
-        return $"Research Lab #{id}";  
+        return $"Research Lab #{id}";
     }
 
     protected override string GetTooltipContent()
