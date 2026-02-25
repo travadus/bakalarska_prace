@@ -12,7 +12,6 @@ public static class GameAPI
 
     /// <summary>
     /// Prints a message to the in-game console.
-    /// Example: Log("Price is: " + price);
     /// </summary>
     public static void Log(object message)
     {
@@ -26,8 +25,7 @@ public static class GameAPI
     #region Market & Economy
 
     /// <summary>
-    /// Purchases energy from the global grid.
-    /// Note: Energy arrives at the next Tick.
+    /// Purchases energy from the market.
     /// </summary>
     public static void BuyEnergy(float amount)
     {
@@ -84,7 +82,6 @@ public static class GameAPI
 
     /// <summary>
     /// Submits an order to sell energy.
-    /// The actual sale happens in the EnergySystem during the next Tick.
     /// </summary>
     public static void SellEnergy(float amount)
     {
@@ -341,7 +338,7 @@ public static class GameAPI
     }
 
     /// <summary>
-    /// Returns current output of the panel in MWh (after dirt and clouds calculation).
+    /// Returns current output of the panel in MWh.
     /// </summary>
     public static float GetSolarOutput(int id)
     {
@@ -354,7 +351,7 @@ public static class GameAPI
 
     /// <summary>
     /// Returns dirt level (0.00 to 1.00).
-    /// 0.00 = Clean, 1.00 = Dirty (zero production).
+    /// 0.00 = Clean, 1.00 = Dirty.
     /// </summary>
     public static float GetSolarDirtLevel(int id)
     {

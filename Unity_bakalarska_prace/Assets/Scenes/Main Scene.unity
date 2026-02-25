@@ -7652,7 +7652,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 69d679ce17ea77c4e88dbd275a9b9a5c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ResearchManager
-  CurrentResearchPoints: 0
+  CurrentResearchPoints: 5000
   unlockAll: 0
 --- !u!4 &1160294829
 Transform:
@@ -10951,7 +10951,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 1, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -0.000061035156, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 610, y: 561.75}
   m_Pivot: {x: 1, y: 1}
 --- !u!114 &1796905315

@@ -57,7 +57,7 @@ public class ContractsManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Calculates the theoretical daily energy capacity of the player to scale contract difficulty appropriately.
+    /// Calculates daily energy capacity of the player to scale contract difficulty.
     /// </summary>
     /// <returns>The estimated daily capacity in MWh.</returns>
     private float CalculatePlayerDailyCapacity()
@@ -65,7 +65,7 @@ public class ContractsManager : MonoBehaviour
         int solarCount = GameAPI.GetSolarCount();
         int batteryCount = GameAPI.GetBatteryCount();
 
-        float baselineCapacity = 20f;
+        float baselineCapacity = 150f;
         float estimatedSolarCapacity = solarCount * 10f;
         float estimatedBatteryCapacity = batteryCount * 5f;
 
@@ -73,8 +73,7 @@ public class ContractsManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Generates a new contract with quotas, durations, and financial parameters mathematically balanced 
-    /// against the player's current energy production capacity.
+    /// Generates a new contract with quotas, durations, and financial parameters
     /// </summary>
     private void GenerateScaledContract()
     {
@@ -133,7 +132,7 @@ public class ContractsManager : MonoBehaviour
         float cyclesPerDay = config.Cycle == ContractCycle.Hourly ? 24f : 1f;
         float expectedTotalRevenue = newContract.targetMWhPerCycle * cyclesPerDay * newContract.rewardPerMWh * durationDays;
 
-        // Financial balancing: Bonus is ~10-20% and failure penalty is ~30-50% of the total expected contract value.
+        // Financial balancing: Bonus is 10-20% and penalty is 30-50% of the total expected contract value.
         newContract.completionBonus = Mathf.RoundToInt((expectedTotalRevenue * Random.Range(0.1f, 0.2f)) / 100f) * 100f;
         newContract.failPenalty = Mathf.RoundToInt((expectedTotalRevenue * Random.Range(0.3f, 0.5f)) / 100f) * 100f;
 
