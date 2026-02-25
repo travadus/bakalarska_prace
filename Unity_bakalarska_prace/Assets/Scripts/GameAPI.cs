@@ -177,9 +177,6 @@ public static class GameAPI
                 return;
             }
 
-            float availableEnergy = EnergySystem.Instance.PowerBusLevel;
-
-            // SECURITY: Get exactly how much is missing for this cycle
             float energyNeeded = c.GetRemainingInCycle();
             float energyToDeliver = Mathf.Min(amount, energyNeeded);
 
@@ -189,13 +186,11 @@ public static class GameAPI
                 return;
             }
 
-            if (availableEnergy >= energyToDeliver)
+            if (EnergySystem.Instance.TryConsumeInstantEnergy(energyToDeliver))
             {
-                // Take energy from Grid
-                EnergySystem.Instance.ConsumeEnergyFromBus(energyToDeliver);
+
                 c.deliveredInCurrentCycle += energyToDeliver;
 
-                // PAY THE PLAYER: Payment happens per MWh delivered
                 float earnedMoney = energyToDeliver * c.rewardPerMWh;
                 if (EconomyManager.Instance != null)
                 {
@@ -204,7 +199,6 @@ public static class GameAPI
 
                 PlayerScriptEngine.Instance.LogMessage($"DELIVERED: {energyToDeliver:F1} MWh to {c.contractType}. Earned: {earnedMoney:F1} €", Color.green);
 
-                // Update UI if open
                 if (ContractsUI.Instance != null && ContractsUI.Instance.IsWindowOpen())
                 {
                     ContractsUI.Instance.RefreshUI();
@@ -212,7 +206,8 @@ public static class GameAPI
             }
             else
             {
-                PlayerScriptEngine.Instance.LogMessage($"DELIVERY FAILED: Not enough energy in Grid Bus. (Requested {energyToDeliver:F1}, Available {availableEnergy:F1})", Color.red);
+                float remainingInBus = EnergySystem.Instance.PowerBusLevel;
+                PlayerScriptEngine.Instance.LogMessage($"DELIVERY FAILED: Not enough energy in Grid & Batteries. (Requested {energyToDeliver:F1}, Grid Bus: {remainingInBus:F1})", Color.red);
             }
         });
     }

@@ -17,7 +17,8 @@ public class EnergySystem : MonoBehaviour
     public float PlannedImport { get; set; }
     public float PlannedExport { get; set; }
 
-    private List<IGridActor> gridActors = new List<IGridActor>();
+    private List<IGridActor> standardActors = new List<IGridActor>();
+    private List<IGridActor> batteryActors = new List<IGridActor>();
 
     private void Awake()
     {
@@ -32,34 +33,49 @@ public class EnergySystem : MonoBehaviour
 
     public void RegisterActor(IGridActor actor)
     {
-        if (!gridActors.Contains(actor)) gridActors.Add(actor);
+        if (actor is BatteryBuilding)
+        {
+            if (!batteryActors.Contains(actor)) batteryActors.Add(actor);
+        }
+        else
+        {
+            if (!standardActors.Contains(actor)) standardActors.Add(actor);
+        }
     }
 
     public void UnregisterActor(IGridActor actor)
     {
-        if (gridActors.Contains(actor)) gridActors.Remove(actor);
+        if (actor is BatteryBuilding)
+        {
+            if (batteryActors.Contains(actor)) batteryActors.Remove(actor);
+        }
+        else
+        {
+            if (standardActors.Contains(actor)) standardActors.Remove(actor);
+        }
     }
 
     // --- MAIN SIMULATION LOOP ---
 
     /// <summary>
-    /// Executes the primary energy flow simulation sequentially: Generation -> Export -> Distribution -> Waste.
+    /// Executes the primary energy flow simulation.
     /// </summary>
-    /// <param name="time">The current in-game date and time.</param>
+    /// <param name="time">The current date and time.</param>
     private void SimulateEnergyFlow(System.DateTime time)
     {
-        CollectSupplies();
-        ProcessExport();
+        CollectPrimarySupplies();
+        BalanceGridWithStorage();
         DistributeDemand();
+        ProcessExport();
         CalculateWaste();
     }
 
     // --- CORE FLOW METHODS ---
 
     /// <summary>
-    /// Gathers energy from explicit market imports and all registered producing actors.
+    /// Gathers energy from explicit market imports and all registered producing actors (excluding storage).
     /// </summary>
-    private void CollectSupplies()
+    private void CollectPrimarySupplies()
     {
         // 1. Process external market imports first
         if (PlannedImport > 0)
@@ -79,7 +95,7 @@ public class EnergySystem : MonoBehaviour
         }
 
         // 2. Extract available energy from local grid sources (e.g., Solar, Batteries)
-        foreach (var actor in gridActors)
+        foreach (var actor in standardActors)
         {
             float supply = actor.GetAvailableSupply();
             if (supply > 0)
@@ -87,6 +103,65 @@ public class EnergySystem : MonoBehaviour
                 actor.ExtractEnergy(supply);
                 PowerBusLevel += supply;
             }
+        }
+    }
+
+    /// <summary>
+    /// Evaluates the total grid demand against the current power bus level.
+    /// Interacts with battery storage to either discharge missing energy or charge surplus energy.
+    /// </summary>
+    private void BalanceGridWithStorage()
+    {
+        // Calculate total required energy (Local consumers + Planned Export)
+        float totalDemand = PlannedExport;
+        foreach (var actor in standardActors)
+        {
+            totalDemand += actor.GetRequestedDemand();
+        }
+
+        float netBalance = PowerBusLevel - totalDemand;
+
+        if (netBalance < 0)
+        {
+            // Grid deficit: Request exact missing amount from battery storage
+            float missingEnergy = Mathf.Abs(netBalance);
+            float extractedFromBatteries = 0f;
+
+            foreach (var battery in batteryActors)
+            {
+                float available = battery.GetAvailableSupply();
+                if (available > 0)
+                {
+                    float amountToTake = Mathf.Min(available, missingEnergy - extractedFromBatteries);
+                    battery.ExtractEnergy(amountToTake);
+                    extractedFromBatteries += amountToTake;
+
+                    if (extractedFromBatteries >= missingEnergy) break;
+                }
+            }
+
+            PowerBusLevel += extractedFromBatteries;
+        }
+        else if (netBalance > 0)
+        {
+            // Grid surplus: Store excess energy in available battery storage
+            float surplusEnergy = netBalance;
+
+            foreach (var battery in batteryActors)
+            {
+                float spaceAvailable = battery.GetRequestedDemand();
+                if (spaceAvailable > 0)
+                {
+                    float chargeAmount = Mathf.Min(spaceAvailable, surplusEnergy);
+                    battery.ReceiveEnergy(chargeAmount);
+                    surplusEnergy -= chargeAmount;
+
+                    if (surplusEnergy <= 0) break; // All surplus stored
+                }
+            }
+
+            // Adjust the bus level after charging batteries
+            PowerBusLevel = totalDemand + surplusEnergy;
         }
     }
 
@@ -137,7 +212,7 @@ public class EnergySystem : MonoBehaviour
     /// </summary>
     private void DistributeDemand()
     {
-        foreach (var actor in gridActors)
+        foreach (var actor in standardActors)
         {
             float demand = actor.GetRequestedDemand();
             if (demand > 0)
@@ -156,6 +231,50 @@ public class EnergySystem : MonoBehaviour
                 }
             }
         }
+    }
+
+    /// <summary>
+    /// Forces the grid to supply a specific amount of energy immediately.
+    /// </summary>
+    public bool TryConsumeInstantEnergy(float amount)
+    {
+        if (PowerBusLevel >= amount)
+        {
+            PowerBusLevel -= amount;
+            return true;
+        }
+
+        float missingEnergy = amount - PowerBusLevel;
+
+        float availableFromBatteries = 0f;
+        foreach (var battery in batteryActors)
+        {
+            if (battery is BatteryBuilding bat && bat.currentMode == BatteryMode.Discharging)
+            {
+                availableFromBatteries += bat.GetAvailableSupply();
+            }
+        }
+
+        if (PowerBusLevel + availableFromBatteries >= amount)
+        {
+            PowerBusLevel = 0f;
+
+            float extracted = 0f;
+            foreach (var battery in batteryActors)
+            {
+                if (battery is BatteryBuilding bat && bat.currentMode == BatteryMode.Discharging)
+                {
+                    float toTake = Mathf.Min(bat.GetAvailableSupply(), missingEnergy - extracted);
+                    bat.ExtractEnergy(toTake);
+                    extracted += toTake;
+
+                    if (extracted >= missingEnergy) break;
+                }
+            }
+            return true;
+        }
+
+        return false;
     }
 
     /// <summary>
