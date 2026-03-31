@@ -1,5 +1,6 @@
-using UnityEngine;
 using System.Collections;
+using UnityEngine;
+using UnityEngine.EventSystems;
 
 
 namespace TMPro.Examples
@@ -125,6 +126,12 @@ namespace TMPro.Examples
 
         void GetPlayerInput()
         {
+            if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
+            {
+                mouseWheel = 0;
+                return;
+            }
+
             moveVector = Vector3.zero;
 
             // Check Mouse Wheel Input prior to Shift Key so we can apply multiplier on Shift for Scrolling

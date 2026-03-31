@@ -10,9 +10,7 @@ public static class GameAPI
     // --- LOGGING EVENTS ---
     public static event Action<string> OnLogMessage;
 
-    /// <summary>
-    /// Prints a message to the in-game console.
-    /// </summary>
+    [APIDoc("Prints a message to the in-game console.")]
     public static void Log(object message)
     {
         string msg = message != null ? message.ToString() : "null";
@@ -27,6 +25,7 @@ public static class GameAPI
     /// <summary>
     /// Purchases energy from the market.
     /// </summary>
+    [APIDoc("Purchases energy from the market.")]
     public static void BuyEnergy(float amount)
     {
         if (amount <= 0) return;
@@ -83,6 +82,8 @@ public static class GameAPI
     /// <summary>
     /// Submits an order to sell energy.
     /// </summary>
+    /// 
+    [APIDoc("Submits an order to sell energy.")]
     public static void SellEnergy(float amount)
     {
         if (amount <= 0) return;
@@ -107,6 +108,8 @@ public static class GameAPI
     /// <summary>
     /// Returns the current market price for 1 MWh.
     /// </summary>
+    /// 
+    [APIDoc("Returns the current market price for 1 MWh.")]
     public static float GetCurrentPrice()
     {
         if (MarketSystem != null) return MarketSystem.GetCurrentPrice();
@@ -116,6 +119,8 @@ public static class GameAPI
     /// <summary>
     /// Returns the current balance of the player's account.
     /// </summary>
+    /// 
+    [APIDoc("Returns the current balance of the player's account.")]
     public static float GetMoneyAmount()
     {
         if (EconomySystem != null) return EconomySystem.GetBalance();
@@ -125,6 +130,8 @@ public static class GameAPI
     /// <summary>
     /// Helper method to check if the player can afford a specific amount.
     /// </summary>
+    /// 
+    [APIDoc("Helper method to check if the player can afford a specific amount.")]
     public static bool CanAfford(float amount)
     {
         if (EconomySystem != null) return EconomySystem.GetBalance() >= amount;
@@ -142,6 +149,9 @@ public static class GameAPI
     /// Returns the remaining MWh required for the current cycle of the given contract.
     /// Returns 0 if contract is not active or not found.
     /// </summary>
+    /// 
+    [APIDoc("Returns the remaining MWh required for the current cycle of the given contract." +
+        "Returns 0 if contract is not active or not found.")]
     public static float GetContractRemainingQuota(int contractId)
     {
         if (ContractsManager.Instance == null) return 0f;
@@ -157,6 +167,8 @@ public static class GameAPI
     /// <summary>
     /// Delivers energy from the grid bus to an active contract.
     /// </summary>
+    /// 
+    [APIDoc("Delivers energy from the grid bus to an active contract.")]
     public static void DeliverToContract(int contractId, float amount)
     {
         if (amount <= 0 || ContractsManager.Instance == null || EnergySystem.Instance == null || PlayerScriptEngine.Instance == null) return;
@@ -219,6 +231,7 @@ public static class GameAPI
     // =================================================================================
     #region Battery Management
 
+    [APIDoc("")]
     public static int GetBatteryCount()
     {
         if (BuildingsManager.Instance != null)
@@ -226,6 +239,7 @@ public static class GameAPI
         return 0;
     }
 
+    [APIDoc("")]
     public static int[] GetBatteryIDs()
     {
         if (BuildingsManager.Instance != null)
@@ -240,6 +254,8 @@ public static class GameAPI
     /// <summary>
     /// Returns battery charge percentage (0.0 to 1.0).
     /// </summary>
+    /// 
+    [APIDoc("Returns battery charge percentage (0.0 to 1.0).")]
     public static float GetBatteryFillRatio(int id)
     {
         if (TryGetBattery(id, out var bat))
@@ -253,6 +269,8 @@ public static class GameAPI
     /// <summary>
     /// Returns exact amount of stored energy in MWh.
     /// </summary>
+    /// 
+    [APIDoc("Returns exact amount of stored energy in MWh.")]
     public static float GetBatteryStoredMWh(int id)
     {
         if (TryGetBattery(id, out var bat))
@@ -265,6 +283,8 @@ public static class GameAPI
     /// <summary>
     /// Returns maximum capacity of the battery in MWh.
     /// </summary>
+    /// 
+    [APIDoc("Returns maximum capacity of the battery in MWh.")]
     public static float GetBatteryCapacity(int id)
     {
         if (TryGetBattery(id, out var bat))
@@ -274,9 +294,7 @@ public static class GameAPI
         return 0f;
     }
 
-    /// <summary>
-    /// Sets battery to CHARGING mode (draws energy from grid).
-    /// </summary>
+    [APIDoc("Sets battery to CHARGING mode (draws energy from grid).")]
     public static void ChargeBattery(int id)
     {
         if (TryGetBattery(id, out var bat))
@@ -288,6 +306,8 @@ public static class GameAPI
     /// <summary>
     /// Sets battery to DISCHARGING mode (sends energy to grid).
     /// </summary>
+    /// 
+    [APIDoc("Sets battery to DISCHARGING mode (sends energy to grid).")]
     public static void DischargeBattery(int id)
     {
         if (TryGetBattery(id, out var bat))
@@ -299,6 +319,8 @@ public static class GameAPI
     /// <summary>
     /// Sets battery to STANDBY mode (does nothing).
     /// </summary>
+    /// 
+    [APIDoc("Sets battery to STANDBY mode (does nothing).")]
     public static void SetBatteryStandby(int id)
     {
         if (TryGetBattery(id, out var bat))
@@ -314,6 +336,7 @@ public static class GameAPI
     // =================================================================================
     #region Solar Management
 
+    [APIDoc("")]
     public static int GetSolarCount()
     {
         if (BuildingsManager.Instance != null)
@@ -321,6 +344,7 @@ public static class GameAPI
         return 0;
     }
 
+    [APIDoc("")]
     public static int[] GetSolarIDs()
     {
         if (BuildingsManager.Instance != null)
@@ -335,6 +359,8 @@ public static class GameAPI
     /// <summary>
     /// Returns current output of the panel in MWh.
     /// </summary>
+    /// 
+    [APIDoc("Returns current output of the panel in MWh.")]
     public static float GetSolarOutput(int id)
     {
         if (TryGetSolar(id, out var solar))
@@ -348,6 +374,9 @@ public static class GameAPI
     /// Returns dirt level (0.00 to 1.00).
     /// 0.00 = Clean, 1.00 = Dirty.
     /// </summary>
+    /// 
+    [APIDoc("Returns dirt level (0.00 to 1.00)." +
+        "0.00 = Clean, 1.00 = Dirty.")]
     public static float GetSolarDirtLevel(int id)
     {
         if (TryGetSolar(id, out var solar))
@@ -360,6 +389,8 @@ public static class GameAPI
     /// <summary>
     /// Pays maintenance crew to clean the solar panel.
     /// </summary>
+    /// 
+    [APIDoc("Pays maintenance crew to clean the solar panel.")]
     public static void CleanSolarPanel(int id)
     {
         if (PlayerScriptEngine.Instance != null)
@@ -391,6 +422,7 @@ public static class GameAPI
     // =================================================================================
     #region Research Management
 
+    [APIDoc("")]
     public static int GetResearchLabCount()
     {
         if (BuildingsManager.Instance != null)
@@ -398,6 +430,7 @@ public static class GameAPI
         return 0;
     }
 
+    [APIDoc("")]
     public static int[] GetResearchLabIDs()
     {
         if (BuildingsManager.Instance != null)
@@ -413,6 +446,9 @@ public static class GameAPI
     /// Turns a specific Research Lab ON or OFF.
     /// If active, it consumes money and generates Research Points (RP) every tick.
     /// </summary>
+    /// 
+    [APIDoc("Turns a specific Research Lab ON or OFF. " +
+        "If active, it consumes money and generates Research Points (RP) every tick.")]
     public static void SetResearchLabState(int id, bool active)
     {
         if (PlayerScriptEngine.Instance != null)
@@ -437,6 +473,8 @@ public static class GameAPI
     /// <summary>
     /// Checks if a Research Lab is currently active.
     /// </summary>
+    /// 
+    [APIDoc("Checks if a Research Lab is currently active.")]
     public static bool IsResearchLabActive(int id)
     {
         if (TryGetResearchLab(id, out var lab))
@@ -453,18 +491,21 @@ public static class GameAPI
     // =================================================================================
     #region Weather & Forecast
 
+    [APIDoc("")]
     public static float GetCurrentWind()
     {
         if (WeatherSystem.Instance != null) return WeatherSystem.Instance.CurrentWeather.WindIntensity;
         return 0f;
     }
 
+    [APIDoc("")]
     public static float GetCurrentSun()
     {
         if (WeatherSystem.Instance != null) return WeatherSystem.Instance.CurrentWeather.SunIntensity;
         return 0f;
     }
 
+    [APIDoc("")]
     public static float GetCurrentClouds()
     {
         if (WeatherSystem.Instance != null) return WeatherSystem.Instance.CurrentWeather.CloudDensity;
@@ -474,6 +515,8 @@ public static class GameAPI
     /// <summary>
     /// Returns forecasted sun intensity for hours ahead (0-24).
     /// </summary>
+    /// 
+    [APIDoc("Returns forecasted sun intensity for hours ahead (0-24).")]
     public static float GetForecastSun(int hoursAhead)
     {
         if (WeatherSystem.Instance == null || TimeSystem.Instance == null) return 0f;
@@ -487,6 +530,8 @@ public static class GameAPI
     /// <summary>
     /// Returns forecasted wind intensity for hours ahead (0-24).
     /// </summary>
+    /// 
+    [APIDoc("Returns forecasted wind intensity for hours ahead (0-24).")]
     public static float GetForecastWind(int hoursAhead)
     {
         if (WeatherSystem.Instance == null || TimeSystem.Instance == null) return 0f;
