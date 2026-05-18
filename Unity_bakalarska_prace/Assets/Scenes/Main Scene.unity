@@ -5177,7 +5177,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "1000 \u20AC"
+  m_text: "5000 \u20AC"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: f87aac9aeb36bf44db11563b42d8f14d, type: 2}
   m_sharedMaterial: {fileID: 1378213128149027143, guid: f87aac9aeb36bf44db11563b42d8f14d, type: 2}
@@ -6191,7 +6191,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b142cef29b898c9468df0aaef3a1510a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EconomyManager
-  startBalance: 1000
+  startBalance: 5000
   currentBalance: 0
   currentElectricityPricePerMWh: 0
   transactionHistory: []
